@@ -134,6 +134,9 @@ import (
 
 	qlgithub_aliyun_alibabacloudsdkgo_services_dysmsapi "github.com/topxeq/qlang/lib/github.com/aliyun/alibaba-cloud-sdk-go/services/dysmsapi"
 
+	// qlgithub_avfs_avfs_fs_memfs "github.com/topxeq/qlang/lib/github.com/avfs/avfs/fs/memfs"
+	qlgithub_topxeq_afero "github.com/topxeq/qlang/lib/github.com/topxeq/afero"
+
 	
 
 	// full version related start
@@ -152,7 +155,7 @@ import (
 
 // Non GUI related
 
-var versionG = "1.06a"
+var versionG = "1.07a"
 
 var verboseG = false
 
@@ -616,6 +619,7 @@ func importQLNonGUIPackages() {
 		"newFunc":          NewFunc,
 
 		"scriptPathG": scriptPathG,
+		"versionG":    versionG,
 
 		
 	}
@@ -768,6 +772,10 @@ func importQLNonGUIPackages() {
 
 	qlang.Import("github_aliyun_alibabacloudsdkgo_services_dysmsapi", qlgithub_aliyun_alibabacloudsdkgo_services_dysmsapi.Exports)
 	qlang.Import("aliyunsms", qlgithub_aliyun_alibabacloudsdkgo_services_dysmsapi.Exports)
+
+	// qlang.Import("github_avfs_avfs_fs_memfs", qlgithub_avfs_avfs_fs_memfs.Exports)
+	qlang.Import("github_topxeq_afero", qlgithub_topxeq_afero.Exports)
+	qlang.Import("memfs", qlgithub_topxeq_afero.Exports)
 
 }
 
