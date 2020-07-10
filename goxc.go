@@ -155,7 +155,7 @@ import (
 
 // Non GUI related
 
-var versionG = "1.07a"
+var versionG = "1.08a"
 
 var verboseG = false
 
@@ -615,6 +615,7 @@ func importQLNonGUIPackages() {
 		"newSSHClient":     tk.NewSSHClient,
 		"getParameter":     tk.GetParameterByIndexWithDefaultValue,
 		"getSwitch":        tk.GetSwitchWithDefaultValue,
+		"getIntSwitch":     tk.GetSwitchWithDefaultIntValue,
 		"switchExists":     tk.IfSwitchExistsWhole,
 		"newFunc":          NewFunc,
 
