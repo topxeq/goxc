@@ -156,11 +156,13 @@ import (
 
 // Non GUI related
 
-var versionG = "1.22a"
+var versionG = "1.23a"
 
 var verboseG = false
 
 var variableG = make(map[string]interface{})
+
+var codeTextG = ""
 
 var qlVMG *qlang.Qlang = nil
 
@@ -579,9 +581,9 @@ func importQLNonGUIPackages() {
 		"typeOf":           tk.TypeOfValue,
 		"typeOfReflect":    tk.TypeOfValueReflect,
 		"remove":           tk.RemoveItemsInArray,
-		"pr":               fmt.Print,
-		"pln":              fmt.Println,
-		"prf":              fmt.Printf,
+		"pr":               tk.Pr,
+		"pln":              tk.Pln,
+		"prf":              tk.Printf,
 		"printfln":         tk.Pl,
 		"pl":               tk.Pl,
 		"sprintf":          fmt.Sprintf,
@@ -978,8 +980,9 @@ func runArgs(argsA ...string) interface{} {
 	}
 
 	ifClipT := tk.IfSwitchExistsWhole(argsT, "-clip")
+	ifEmbedT := (codeTextG != "") && (!tk.IfSwitchExistsWhole(argsT, "-noembed"))
 
-	if scriptT == "" && (!ifClipT) {
+	if scriptT == "" && (!ifClipT) && (!ifEmbedT) {
 
 		// autoPathT := filepath.Join(tk.GetApplicationPath(), "auto.gox")
 		// autoGxbPathT := filepath.Join(tk.GetApplicationPath(), "auto.gxb")
@@ -1108,6 +1111,10 @@ func runArgs(argsA ...string) interface{} {
 		scriptPathG = ""
 	} else if ifClipT {
 		fcT = tk.GetClipText()
+
+		scriptPathG = ""
+	} else if ifEmbedT {
+		fcT = codeTextG
 
 		scriptPathG = ""
 	} else if ifCloudT {
