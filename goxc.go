@@ -142,6 +142,8 @@ import (
 
 	qlgithub_topxeq_xmlx "github.com/topxeq/qlang/lib/github.com/topxeq/xmlx"
 
+	qlgithub_cavaliercoder_grab "github.com/topxeq/qlang/lib/github.com/cavaliercoder/grab"
+
 	
 
 	// full version related start
@@ -160,7 +162,7 @@ import (
 
 // Non GUI related
 
-var versionG = "1.36a"
+var versionG = "1.38a"
 
 var verboseG = false
 
@@ -779,6 +781,8 @@ func importQLNonGUIPackages() {
 	qlang.Import("sqltk", qlgithubtopxeqsqltk.Exports)
 
 	qlang.Import("github_topxeq_xmlx", qlgithub_topxeq_xmlx.Exports)
+
+	qlang.Import("github_cavaliercoder_grab", qlgithub_cavaliercoder_grab.Exports)
 
 	
 
