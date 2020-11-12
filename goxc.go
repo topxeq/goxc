@@ -144,6 +144,8 @@ import (
 
 	qlgithub_cavaliercoder_grab "github.com/topxeq/qlang/lib/github.com/cavaliercoder/grab"
 
+	qlgithub_pterm_pterm "github.com/topxeq/qlang/lib/github.com/pterm/pterm"
+
 	
 
 	// full version related start
@@ -162,7 +164,7 @@ import (
 
 // Non GUI related
 
-var versionG = "1.51a"
+var versionG = "1.52a"
 
 // add tk.ToJSONX
 
@@ -785,6 +787,8 @@ func importQLNonGUIPackages() {
 	qlang.Import("github_topxeq_xmlx", qlgithub_topxeq_xmlx.Exports)
 
 	qlang.Import("github_cavaliercoder_grab", qlgithub_cavaliercoder_grab.Exports)
+
+	qlang.Import("github_pterm_pterm", qlgithub_pterm_pterm.Exports)
 
 	
 
