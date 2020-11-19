@@ -165,7 +165,7 @@ import (
 
 // Non GUI related
 
-var versionG = "1.53a"
+var versionG = "1.55a"
 
 // add tk.ToJSONX
 
@@ -657,6 +657,8 @@ func importQLNonGUIPackages() {
 		"md5Encode":        tk.MD5Encrypt,
 		"jsonEncode":       tk.ObjectToJSON,
 		"jsonDecode":       tk.JSONToObject,
+		"simpleEncode":     tk.EncodeStringCustomEx,
+		"simpleDecode":     tk.DecodeStringCustom,
 		"newFunc":          NewFunc,
 
 		"scriptPathG": scriptPathG,
