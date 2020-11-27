@@ -118,13 +118,9 @@ import (
 	qlgithubtopxeqsqltk "github.com/topxeq/qlang/lib/github.com/topxeq/sqltk"
 	qlgithubtopxeqtk "github.com/topxeq/qlang/lib/github.com/topxeq/tk"
 
-	qlgithub_dgraphio_badger "github.com/topxeq/qlang/lib/github.com/dgraph-io/badger"
-
 	qlgithub_fogleman_gg "github.com/topxeq/qlang/lib/github.com/fogleman/gg"
 
 	qlgithub_360EntSecGroupSkylar_excelize "github.com/topxeq/qlang/lib/github.com/360EntSecGroup-Skylar/excelize"
-
-	qlgithub_domodwyer_mailyak "github.com/topxeq/qlang/lib/github.com/domodwyer/mailyak"
 
 	qlgithub_kbinani_screenshot "github.com/topxeq/qlang/lib/github.com/kbinani/screenshot"
 
@@ -165,7 +161,7 @@ import (
 
 // Non GUI related
 
-var versionG = "1.55a"
+var versionG = "1.56a"
 
 // add tk.ToJSONX
 
@@ -795,14 +791,10 @@ func importQLNonGUIPackages() {
 
 	
 
-	qlang.Import("github_dgraphio_badger", qlgithub_dgraphio_badger.Exports)
-
 	qlang.Import("github_fogleman_gg", qlgithub_fogleman_gg.Exports)
 	qlang.Import("gg", qlgithub_fogleman_gg.Exports)
 
 	qlang.Import("github_360EntSecGroupSkylar_excelize", qlgithub_360EntSecGroupSkylar_excelize.Exports)
-
-	qlang.Import("github_domodwyer_mailyak", qlgithub_domodwyer_mailyak.Exports)
 
 	qlang.Import("github_kbinani_screenshot", qlgithub_kbinani_screenshot.Exports)
 
@@ -997,15 +989,6 @@ func runArgs(argsA ...string) interface{} {
 
 			tk.Pl("Sciter DLL downloaded to application path.")
 
-			rs = tk.DownloadFile("http://scripts.frenchfriend.net/pub/liblcl.dll", applicationPathT, "liblcl.dll", false)
-
-			if tk.IsErrorString(rs) {
-
-				return tk.Errf("failed to download LCL file.")
-			}
-
-			tk.Pl("LCL DLL downloaded to application path.")
-
 			return nil
 		}
 	}
@@ -1117,7 +1100,7 @@ func runArgs(argsA ...string) interface{} {
 	verboseG = tk.IfSwitchExistsWhole(argsT, "-verbose")
 
 	ifMagicT := false
-	magicNumberT, errT := tk.StrToInt(scriptT)
+	magicNumberT, errT := tk.StrToIntE(scriptT)
 
 	if errT == nil {
 		ifMagicT = true
