@@ -139,6 +139,8 @@ import (
 
 	qlgithub_topxeq_xmlx "github.com/topxeq/qlang/lib/github.com/topxeq/xmlx"
 
+	qlgithub_topxeq_awsapi "github.com/topxeq/qlang/lib/github.com/topxeq/awsapi"
+
 	qlgithub_cavaliercoder_grab "github.com/topxeq/qlang/lib/github.com/cavaliercoder/grab"
 
 	qlgithub_pterm_pterm "github.com/topxeq/qlang/lib/github.com/pterm/pterm"
@@ -161,7 +163,7 @@ import (
 
 // Non GUI related
 
-var versionG = "1.57a"
+var versionG = "1.58a"
 
 // add tk.ToJSONX
 
@@ -784,6 +786,8 @@ func importQLNonGUIPackages() {
 	qlang.Import("sqltk", qlgithubtopxeqsqltk.Exports)
 
 	qlang.Import("github_topxeq_xmlx", qlgithub_topxeq_xmlx.Exports)
+
+	qlang.Import("github_topxeq_awsapi", qlgithub_topxeq_awsapi.Exports)
 
 	qlang.Import("github_cavaliercoder_grab", qlgithub_cavaliercoder_grab.Exports)
 
