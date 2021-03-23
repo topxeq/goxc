@@ -9,6 +9,7 @@ require (
 	github.com/beevik/etree v1.1.1-0.20200718192613-4a2f8b9d084c // indirect
 	github.com/cavaliercoder/grab v2.0.0+incompatible // indirect
 	github.com/denisenkom/go-mssqldb v0.9.0
+	github.com/domodwyer/mailyak v3.1.1+incompatible // indirect
 	github.com/gen2brain/shm v0.0.0-20200228170931-49f9650110c5 // indirect
 	github.com/go-sql-driver/mysql v1.5.0
 	github.com/godror/godror v0.23.1
