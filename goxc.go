@@ -148,8 +148,6 @@ import (
 
 	qlgithub_domodwyer_mailyak "github.com/topxeq/qlang/lib/github.com/domodwyer/mailyak"
 
-	
-
 	// full version related start
 	_ "github.com/denisenkom/go-mssqldb"
 	_ "github.com/godror/godror"
@@ -158,8 +156,6 @@ import (
 
 	_ "github.com/go-sql-driver/mysql"
 	_ "github.com/mattn/go-sqlite3"
-
-	
 
 	"github.com/topxeq/tk"
 )
@@ -664,13 +660,11 @@ func importQLNonGUIPackages() {
 		"simpleEncode":         tk.EncodeStringCustomEx,
 		"simpleDecode":         tk.DecodeStringCustom,
 		"getFormValue":         tk.GetFormValueWithDefaultValue,
-		"generateJOSNResponse": tk.GenerateJSONPResponseWithMore,
+		"generateJSONResponse": tk.GenerateJSONPResponseWithMore,
 
 		"newFunc":     NewFunc,
 		"scriptPathG": scriptPathG,
 		"versionG":    versionG,
-
-		
 	}
 
 	qlang.Import("", defaultExports)
@@ -804,8 +798,6 @@ func importQLNonGUIPackages() {
 
 	qlang.Import("github_domodwyer_mailyak", qlgithub_domodwyer_mailyak.Exports)
 
-	
-
 	qlang.Import("github_fogleman_gg", qlgithub_fogleman_gg.Exports)
 	qlang.Import("gg", qlgithub_fogleman_gg.Exports)
 
@@ -932,13 +924,11 @@ func runInteractiveQlang() int {
 
 // Non GUI related end
 
-
-
 func runFile(argsA ...string) interface{} {
 	lenT := len(argsA)
 
 	// full version related start
-	
+
 	// full version related end
 
 	if lenT < 1 {
@@ -978,8 +968,6 @@ func runArgs(argsA ...string) interface{} {
 	}
 
 	scriptT := tk.GetParameterByIndexWithDefaultValue(argsT, 0, "")
-
-	
 
 	if tk.IfSwitchExistsWhole(argsT, "-initgui") {
 		applicationPathT := tk.GetApplicationPath()
@@ -1360,8 +1348,6 @@ func initQLVM() {
 		// qlang.SetDumpCode("1")
 
 		importQLNonGUIPackages()
-
-		
 
 		qlVMG = qlang.New()
 	}
