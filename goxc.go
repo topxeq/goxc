@@ -166,7 +166,7 @@ import (
 
 // Non GUI related
 
-var versionG = "1.69a"
+var versionG = "1.72a"
 
 // add tk.ToJSONX
 
@@ -348,6 +348,326 @@ func getMagic(numberA int) string {
 
 	return fcT
 
+}
+
+// native functions
+
+var leBufG []string
+
+func leClear() {
+	leBufG = make([]string, 0, 100)
+}
+
+func leLoadString(strA string) {
+	if leBufG == nil {
+		leClear()
+	}
+
+	leBufG = tk.SplitLines(strA)
+}
+
+func leSaveString() string {
+	if leBufG == nil {
+		leClear()
+	}
+
+	return tk.JoinLines(leBufG)
+}
+
+func leLoadFile(fileNameA string) error {
+	if leBufG == nil {
+		leClear()
+	}
+
+	strT, errT := tk.LoadStringFromFileE(fileNameA)
+
+	if errT != nil {
+		return errT
+	}
+
+	leBufG = tk.SplitLines(strT)
+	// leBufG, errT = tk.LoadStringListBuffered(fileNameA, false, false)
+
+	return nil
+}
+
+func leSaveFile(fileNameA string) error {
+	if leBufG == nil {
+		leClear()
+	}
+
+	var errT error
+
+	textT := tk.JoinLines(leBufG)
+
+	if tk.IsErrStr(textT) {
+		return tk.Errf(tk.GetErrStr(textT))
+	}
+
+	errT = tk.SaveStringToFileE(textT, fileNameA)
+
+	return errT
+}
+
+func leLoadClip() error {
+	if leBufG == nil {
+		leClear()
+	}
+
+	textT := tk.GetClipText()
+
+	if tk.IsErrStr(textT) {
+		return tk.Errf(tk.GetErrStr(textT))
+	}
+
+	leBufG = tk.SplitLines(textT)
+
+	return nil
+}
+
+func leSaveClip() error {
+	if leBufG == nil {
+		leClear()
+	}
+
+	textT := tk.JoinLines(leBufG)
+
+	if tk.IsErrStr(textT) {
+		return tk.Errf(tk.GetErrStr(textT))
+	}
+
+	return tk.SetClipText(textT)
+}
+
+func leViewAll(argsA ...string) error {
+	if leBufG == nil {
+		leClear()
+	}
+
+	if leBufG == nil {
+		return tk.Errf("buffer not initalized")
+	}
+
+	if tk.IfSwitchExistsWhole(argsA, "-nl") {
+		textT := tk.JoinLines(leBufG)
+
+		tk.Pln(textT)
+
+	} else {
+		for i, v := range leBufG {
+			tk.Pl("%v: %v", i, v)
+		}
+	}
+
+	return nil
+}
+
+func leViewLine(idxA int) error {
+	if leBufG == nil {
+		leClear()
+	}
+
+	if leBufG == nil {
+		return tk.Errf("buffer not initalized")
+	}
+
+	if idxA < 0 || idxA >= len(leBufG) {
+		return tk.Errf("line index out of range")
+	}
+
+	tk.Pln(leBufG[idxA])
+
+	return nil
+}
+
+func leGetLine(idxA int) string {
+	if leBufG == nil {
+		leClear()
+	}
+
+	if leBufG == nil {
+		return tk.ErrStrf("buffer not initalized")
+	}
+
+	if idxA < 0 || idxA >= len(leBufG) {
+		return tk.ErrStrf("line index out of range")
+	}
+
+	return leBufG[idxA]
+}
+
+func leSetLine(idxA int, strA string) error {
+	if leBufG == nil {
+		leClear()
+	}
+
+	if leBufG == nil {
+		return tk.Errf("buffer not initalized")
+	}
+
+	if idxA < 0 || idxA >= len(leBufG) {
+		return tk.Errf("line index out of range")
+	}
+
+	leBufG[idxA] = strA
+
+	return nil
+}
+
+func leSetLines(startA int, endA int, strA string) error {
+	if leBufG == nil {
+		leClear()
+	}
+
+	if startA > endA {
+		return tk.Errf("start index greater than end index")
+	}
+
+	listT := tk.SplitLines(strA)
+
+	if endA < 0 {
+		rs := make([]string, 0, len(leBufG)+len(listT))
+
+		rs = append(rs, listT...)
+		rs = append(rs, leBufG...)
+
+		leBufG = rs
+
+		return nil
+	}
+
+	if startA >= len(leBufG) {
+		leBufG = append(leBufG, listT...)
+
+		return nil
+	}
+
+	if startA < 0 {
+		startA = 0
+	}
+
+	if endA >= len(leBufG) {
+		endA = len(leBufG) - 1
+	}
+
+	rs := make([]string, 0, len(leBufG)+len(listT)-1)
+
+	rs = append(rs, leBufG[:startA]...)
+	rs = append(rs, listT...)
+	rs = append(rs, leBufG[endA+1:]...)
+
+	leBufG = rs
+
+	return nil
+}
+
+func leInsertLine(idxA int, strA string) error {
+	if leBufG == nil {
+		leClear()
+	}
+
+	// if leBufG == nil {
+	// 	return tk.Errf("buffer not initalized")
+	// }
+
+	// if idxA < 0 || idxA >= len(leBufG) {
+	// 	return tk.Errf("line index out of range")
+	// }
+
+	if idxA < 0 {
+		idxA = 0
+	}
+
+	listT := tk.SplitLines(strA)
+
+	if idxA >= len(leBufG) {
+		leBufG = append(leBufG, listT...)
+	} else {
+		rs := make([]string, 0, len(leBufG)+1)
+
+		rs = append(rs, leBufG[:idxA]...)
+		rs = append(rs, listT...)
+		rs = append(rs, leBufG[idxA:]...)
+
+		leBufG = rs
+
+	}
+
+	return nil
+}
+
+func leAppendLine(strA string) error {
+	if leBufG == nil {
+		leClear()
+	}
+
+	// if leBufG == nil {
+	// 	return tk.Errf("buffer not initalized")
+	// }
+
+	// if idxA < 0 || idxA >= len(leBufG) {
+	// 	return tk.Errf("line index out of range")
+	// }
+
+	listT := tk.SplitLines(strA)
+
+	leBufG = append(leBufG, listT...)
+
+	return nil
+}
+
+func leRemoveLine(idxA int) error {
+	if leBufG == nil {
+		leClear()
+	}
+
+	if leBufG == nil {
+		return tk.Errf("buffer not initalized")
+	}
+
+	if idxA < 0 || idxA >= len(leBufG) {
+		return tk.Errf("line index out of range")
+	}
+
+	rs := make([]string, 0, len(leBufG)+1)
+
+	rs = append(rs, leBufG[:idxA]...)
+	rs = append(rs, leBufG[idxA+1:]...)
+
+	leBufG = rs
+
+	return nil
+}
+
+func leRemoveLines(startA int, endA int) error {
+	if leBufG == nil {
+		leClear()
+	}
+
+	if leBufG == nil {
+		return tk.Errf("buffer not initalized")
+	}
+
+	if startA < 0 || startA >= len(leBufG) {
+		return tk.Errf("start line index out of range")
+	}
+
+	if endA < 0 || endA >= len(leBufG) {
+		return tk.Errf("end line index out of range")
+	}
+
+	if startA > endA {
+		return tk.Errf("start line index greater than end line index")
+	}
+
+	rs := make([]string, 0, len(leBufG)+1)
+
+	rs = append(rs, leBufG[:startA]...)
+	rs = append(rs, leBufG[endA+1:]...)
+
+	leBufG = rs
+
+	return nil
 }
 
 func magic(numberA int, argsA ...string) interface{} {
@@ -545,64 +865,210 @@ func NewFuncFloatStringError(funcA *interface{}) *(func(float64) (string, error)
 	return &f
 }
 
+func printValue(nameA string) {
+
+	v, ok := qlVMG.GetVar(nameA)
+
+	if !ok {
+		tk.Pl("no variable by the name found: %v", nameA)
+		return
+	}
+
+	tk.Pl("%v(%T): %v", nameA, v, v)
+
+}
+
+func defined(nameA string) bool {
+
+	_, ok := qlVMG.GetVar(nameA)
+
+	return ok
+
+}
+
+func nilToEmpty(vA interface{}, argsA ...string) string {
+
+	if vA == nil {
+		return ""
+	}
+
+	if vA == spec.Undefined {
+		return ""
+	}
+
+	if tk.IsNil(vA) {
+		return ""
+	}
+
+	if (argsA != nil) && (len(argsA) > 0) {
+		vf, ok := vA.(float64)
+		if ok {
+			if tk.IfSwitchExistsWhole(argsA, "-nofloat") {
+				return tk.ToStr(int(vf))
+			} else {
+				return tk.Float64ToStr(vA.(float64))
+			}
+		}
+	}
+
+	return fmt.Sprintf("%v", vA)
+
+}
+
+func logPrint(formatA string, argsA ...interface{}) {
+	tk.Pl(formatA, argsA...)
+	tk.LogWithTimeCompact(formatA, argsA...)
+}
+
+// -1 return random item
+func getArrayItem(aryA interface{}, idxA int, defaultA ...interface{}) interface{} {
+	var hasDefaultT = false
+	if len(defaultA) > 0 {
+		hasDefaultT = true
+	}
+
+	if aryA == nil {
+		if hasDefaultT {
+			return defaultA[0]
+		}
+
+		return ""
+	}
+
+	switch aryT := aryA.(type) {
+	case []interface{}:
+		lenT := len(aryT)
+
+		if lenT < 0 || (idxA < -1 || idxA >= lenT) {
+			if hasDefaultT {
+				return defaultA[0]
+			}
+
+			return ""
+		}
+
+		if idxA == -1 {
+			return aryT[tk.GetRandomIntLessThan(lenT)]
+		}
+
+		return aryT[idxA]
+	case []string:
+		lenT := len(aryT)
+
+		if lenT < 0 || (idxA < -1 || idxA >= lenT) {
+			if hasDefaultT {
+				return defaultA[0]
+			}
+
+			return ""
+		}
+
+		if idxA == -1 {
+			return aryT[tk.GetRandomIntLessThan(lenT)]
+		}
+
+		return aryT[idxA]
+	case []int:
+		lenT := len(aryT)
+
+		if lenT < 0 || (idxA < -1 || idxA >= lenT) {
+			if hasDefaultT {
+				return defaultA[0]
+			}
+
+			return ""
+		}
+
+		if idxA == -1 {
+			return aryT[tk.GetRandomIntLessThan(lenT)]
+		}
+
+		return aryT[idxA]
+	case []float64:
+		lenT := len(aryT)
+
+		if lenT < 0 || (idxA < -1 || idxA >= lenT) {
+			if hasDefaultT {
+				return defaultA[0]
+			}
+
+			return ""
+		}
+
+		if idxA == -1 {
+			return aryT[tk.GetRandomIntLessThan(lenT)]
+		}
+
+		return aryT[idxA]
+	case []bool:
+		lenT := len(aryT)
+
+		if lenT < 0 || (idxA < -1 || idxA >= lenT) {
+			if hasDefaultT {
+				return defaultA[0]
+			}
+
+			return ""
+		}
+
+		if idxA == -1 {
+			return aryT[tk.GetRandomIntLessThan(lenT)]
+		}
+
+		return aryT[idxA]
+	}
+
+	return ""
+
+}
+
+func getMapItem(mapA interface{}, keyA string, defaultA ...interface{}) interface{} {
+	var hasDefaultT = false
+	if len(defaultA) > 0 {
+		hasDefaultT = true
+	}
+
+	if mapA == nil {
+		if hasDefaultT {
+			return defaultA[0]
+		}
+
+		return ""
+	}
+
+	switch mapT := mapA.(type) {
+	case map[string]interface{}:
+		itemT, ok := mapT[keyA]
+		if !ok {
+			if hasDefaultT {
+				return defaultA[0]
+			}
+
+			return ""
+		}
+
+		return itemT
+	case map[string]string:
+		itemT, ok := mapT[keyA]
+		if !ok {
+			if hasDefaultT {
+				return defaultA[0]
+			}
+
+			return ""
+		}
+
+		return itemT
+	}
+
+	return ""
+}
+
+
+
 var scriptPathG string
 
 func importQLNonGUIPackages() {
-	printValue := func(nameA string) {
-
-		v, ok := qlVMG.GetVar(nameA)
-
-		if !ok {
-			tk.Pl("no variable by the name found: %v", nameA)
-			return
-		}
-
-		tk.Pl("%v(%T): %v", nameA, v, v)
-
-	}
-
-	defined := func(nameA string) bool {
-
-		_, ok := qlVMG.GetVar(nameA)
-
-		return ok
-
-	}
-
-	nilToEmpty := func(vA interface{}, argsA ...string) string {
-
-		if vA == nil {
-			return ""
-		}
-
-		if vA == spec.Undefined {
-			return ""
-		}
-
-		if tk.IsNil(vA) {
-			return ""
-		}
-
-		if (argsA != nil) && (len(argsA) > 0) {
-			vf, ok := vA.(float64)
-			if ok {
-				if tk.IfSwitchExistsWhole(argsA, "-nofloat") {
-					return tk.ToStr(int(vf))
-				} else {
-					return tk.Float64ToStr(vA.(float64))
-				}
-			}
-		}
-
-		return fmt.Sprintf("%v", vA)
-
-	}
-
-	logPrint := func(formatA string, argsA ...interface{}) {
-		tk.Pl(formatA, argsA...)
-		tk.LogWithTimeCompact(formatA, argsA...)
-	}
-
 	// getPointer := func(nameA string) {
 
 	// 	v, ok := qlVMG.GetVar(nameA)
@@ -620,114 +1086,176 @@ func importQLNonGUIPackages() {
 	// 	*p = strA
 	// }
 
+	// import native functions and global variables
 	var defaultExports = map[string]interface{}{
-		"pass":                 tk.Pass,
-		"defined":              defined,
-		"eval":                 qlEval,
-		"typeOf":               tk.TypeOfValue,
-		"typeOfReflect":        tk.TypeOfValueReflect,
-		"remove":               tk.RemoveItemsInArray,
-		"pr":                   tk.Pr,
-		"pln":                  tk.Pln,
-		"prf":                  tk.Printf,
-		"printfln":             tk.Pl,
-		"pl":                   tk.Pl,
-		"sprintf":              fmt.Sprintf,
-		"fprintf":              fmt.Fprintf,
-		"plv":                  tk.Plv,
-		"plvx":                 tk.Plvx,
-		"pv":                   printValue,
-		"plvsr":                tk.Plvsr,
-		"plerr":                tk.PlErr,
-		"plExit":               tk.PlAndExit,
-		"exit":                 tk.Exit,
-		"setValue":             tk.SetValue,
-		"getValue":             tk.GetValue,
-		"setVar":               tk.SetVar,
-		"getVar":               tk.GetVar,
-		"bitXor":               tk.BitXor,
-		"isNil":                tk.IsNil,
-		"isError":              tk.IsError,
-		"nilToEmpty":           nilToEmpty,
-		"strToInt":             tk.StrToIntWithDefaultValue,
-		"intToStr":             tk.IntToStr,
-		"floatToStr":           tk.Float64ToStr,
-		"toStr":                tk.ToStr,
-		"toInt":                tk.ToInt,
-		"toFloat":              tk.ToFloat,
-		"toLower":              strings.ToLower,
-		"toUpper":              strings.ToUpper,
-		"checkError":           tk.CheckError,
-		"checkErrorString":     tk.CheckErrorString,
-		"checkErrf":            tk.CheckErrf,
-		"checkErrStrf":         tk.CheckErrStrf,
-		"fatalf":               tk.Fatalf,
-		"isErrStr":             tk.IsErrStr,
-		"errStr":               tk.ErrStr,
-		"errStrf":              tk.ErrStrF,
-		"getErrStr":            tk.GetErrStr,
-		"errf":                 tk.Errf,
-		"getInput":             tk.GetUserInput,
-		"getInputf":            tk.GetInputf,
-		"deepClone":            tk.DeepClone,
-		"deepCopy":             tk.DeepCopyFromTo,
-		"getClipText":          tk.GetClipText,
-		"setClipText":          tk.SetClipText,
-		"trim":                 tk.Trim,
-		"run":                  runFile,
-		"runCode":              runCode,
-		"runScript":            runScript,
-		"magic":                magic,
-		"systemCmd":            tk.SystemCmd,
+		// common related
+		"pass":          tk.Pass,
+		"defined":       defined,
+		"eval":          qlEval,
+		"typeOf":        tk.TypeOfValue,
+		"typeOfReflect": tk.TypeOfValueReflect,
+		"exit":          tk.Exit,
+		"setValue":      tk.SetValue,
+		"getValue":      tk.GetValue,
+		"setVar":        tk.SetVar,
+		"getVar":        tk.GetVar,
+		"isNil":         tk.IsNil,
+		"deepClone":     tk.DeepClone,
+		"deepCopy":      tk.DeepCopyFromTo,
+		"run":           runFile,
+		"runCode":       runCode,
+		"runScript":     runScript,
+		"magic":         magic,
+
+		// output related
+		"pr":       tk.Pr,
+		"pln":      tk.Pln,
+		"prf":      tk.Printf,
+		"printfln": tk.Pl,
+		"pl":       tk.Pl,
+		"sprintf":  fmt.Sprintf,
+		"fprintf":  fmt.Fprintf,
+		"plv":      tk.Plv,
+		"plvx":     tk.Plvx,
+		"pv":       printValue,
+		"plvsr":    tk.Plvsr,
+		"plerr":    tk.PlErr,
+		"plExit":   tk.PlAndExit,
+
+		// math related
+		"bitXor": tk.BitXor,
+
+		// string related
+		"trim":       tk.Trim,
+		"strReplace": tk.Replace,
+		"getNowStr":  tk.GetNowTimeStringFormal,
+		"splitLines": tk.SplitLines,
+		"startsWith": tk.StartsWith,
+		"endsWith":   tk.EndsWith,
+		"contains":   strings.Contains,
+
+		// regex related
+		"regMatch":     tk.RegMatchX,
+		"regContains":  tk.RegContainsX,
+		"regFind":      tk.RegFindFirstX,
+		"regFindAll":   tk.RegFindAllX,
+		"regFindIndex": tk.RegFindFirstIndexX,
+		"regReplace":   tk.RegReplaceX,
+
+		// conversion related
+		"nilToEmpty": nilToEmpty,
+		"strToInt":   tk.StrToIntWithDefaultValue,
+		"intToStr":   tk.IntToStr,
+		"floatToStr": tk.Float64ToStr,
+		"toStr":      tk.ToStr,
+		"toInt":      tk.ToInt,
+		"toFloat":    tk.ToFloat,
+		"toLower":    strings.ToLower,
+		"toUpper":    strings.ToUpper,
+
+		// array/map related
+		"remove":       tk.RemoveItemsInArray,
+		"getMapString": tk.SafelyGetStringForKeyWithDefault,
+		"getMapItem":   getMapItem,
+		"getArrayItem": getArrayItem,
+
+		// error related
+		"isError":          tk.IsError,
+		"isErrStr":         tk.IsErrStr,
+		"checkError":       tk.CheckError,
+		"checkErrorString": tk.CheckErrorString,
+		"checkErrf":        tk.CheckErrf,
+		"checkErrStrf":     tk.CheckErrStrf,
+		"fatalf":           tk.Fatalf,
+		"errStr":           tk.ErrStr,
+		"errStrf":          tk.ErrStrF,
+		"getErrStr":        tk.GetErrStr,
+		"errf":             tk.Errf,
+
+		// encode/decode related
+		"xmlEncode":    tk.EncodeToXMLString,
+		"htmlEncode":   tk.EncodeHTML,
+		"htmlDecode":   tk.DecodeHTML,
+		"base64Encode": tk.EncodeToBase64,
+		"base64Decode": tk.DecodeFromBase64,
+		"md5Encode":    tk.MD5Encrypt,
+		"md5":          tk.MD5Encrypt,
+		"hexEncode":    tk.StrToHex,
+		"hexDecode":    tk.HexToStr,
+		"jsonEncode":   tk.ObjectToJSON,
+		"jsonDecode":   tk.JSONToObject,
+		"toJSON":       tk.ToJSONX,
+		"simpleEncode": tk.EncodeStringCustomEx,
+		"simpleDecode": tk.DecodeStringCustom,
+
+		// input related
+		"getInput":  tk.GetUserInput,
+		"getInputf": tk.GetInputf,
+
+		// log related
+		"setLogFile": tk.SetLogFile,
+		"logf":       tk.LogWithTimeCompact,
+		"logPrint":   logPrint,
+
+		// system related
+		"getClipText":  tk.GetClipText,
+		"setClipText":  tk.SetClipText,
+		"systemCmd":    tk.SystemCmd,
+		"ifFileExists": tk.IfFileExists,
+		"getFileSize":  tk.GetFileSizeCompact,
+		"loadText":     tk.LoadStringFromFile,
+		"saveText":     tk.SaveStringToFile,
+		"loadBytes":    tk.LoadBytesFromFileE,
+		"saveBytes":    tk.SaveBytesToFile,
+		"sleep":        tk.SleepSeconds,
+		"sleepSeconds": tk.SleepSeconds,
+
+		// command-line
+		"getParameter":   tk.GetParameterByIndexWithDefaultValue,
+		"getSwitch":      tk.GetSwitchWithDefaultValue,
+		"getIntSwitch":   tk.GetSwitchWithDefaultIntValue,
+		"switchExists":   tk.IfSwitchExistsWhole,
+		"ifSwitchExists": tk.IfSwitchExistsWhole,
+
+		// network related
 		"newSSHClient":         tk.NewSSHClient,
-		"getParameter":         tk.GetParameterByIndexWithDefaultValue,
-		"getSwitch":            tk.GetSwitchWithDefaultValue,
-		"getIntSwitch":         tk.GetSwitchWithDefaultIntValue,
-		"switchExists":         tk.IfSwitchExistsWhole,
-		"ifSwitchExists":       tk.IfSwitchExistsWhole,
-		"xmlEncode":            tk.EncodeToXMLString,
-		"htmlEncode":           tk.EncodeHTML,
-		"htmlDecode":           tk.DecodeHTML,
-		"base64Encode":         tk.EncodeToBase64,
-		"base64Decode":         tk.DecodeFromBase64,
-		"md5Encode":            tk.MD5Encrypt,
-		"md5":                  tk.MD5Encrypt,
-		"hexEncode":            tk.StrToHex,
-		"hexDecode":            tk.HexToStr,
-		"jsonEncode":           tk.ObjectToJSON,
-		"jsonDecode":           tk.JSONToObject,
-		"toJSON":               tk.ToJSONX,
-		"simpleEncode":         tk.EncodeStringCustomEx,
-		"simpleDecode":         tk.DecodeStringCustom,
 		"getFormValue":         tk.GetFormValueWithDefaultValue,
 		"generateJSONResponse": tk.GenerateJSONPResponseWithMore,
-		"ifFileExists":         tk.IfFileExists,
-		"getFileSize":          tk.GetFileSizeCompact,
-		"loadText":             tk.LoadStringFromFile,
-		"saveText":             tk.SaveStringToFile,
-		"loadBytes":            tk.LoadBytesFromFileE,
-		"saveBytes":            tk.SaveBytesToFile,
-		"setLogFile":           tk.SetLogFile,
-		"logf":                 tk.LogWithTimeCompact,
-		"logPrint":             logPrint,
-		"strReplace":           tk.Replace,
-		"getNowString":         tk.GetNowTimeStringFormal,
-		"splitLines":           tk.SplitLines,
-		"sleep":                tk.SleepSeconds,
-		"sleepSeconds":         tk.SleepSeconds,
-		"regMatch":             tk.RegMatchX,
-		"regContains":          tk.RegContainsX,
-		"regFind":              tk.RegFindFirstX,
-		"regFindAll":           tk.RegFindAllX,
-		"regFindIndex":         tk.RegFindFirstIndexX,
-		"regReplace":           tk.RegReplaceX,
-		"startsWith":           tk.StartsWith,
-		"endsWith":             tk.EndsWith,
-		"contains":             strings.Contains,
 
-		"newFunc":     NewFunc,
+		// line editor related
+		"leClear":       leClear,
+		"leLoadStr":     leLoadString,
+		"leSetAll":      leLoadString,
+		"leSaveStr":     leSaveString,
+		"leGetAll":      leSaveString,
+		"leLoad":        leLoadFile,
+		"leLoadFile":    leLoadFile,
+		"leSave":        leSaveFile,
+		"leSaveFile":    leSaveFile,
+		"leLoadClip":    leLoadClip,
+		"leSaveClip":    leSaveClip,
+		"leInsert":      leInsertLine,
+		"leInsertLine":  leInsertLine,
+		"leAppend":      leAppendLine,
+		"leAppendLine":  leAppendLine,
+		"leSet":         leSetLine,
+		"leSetLine":     leSetLine,
+		"leSetLines":    leSetLines,
+		"leRemove":      leRemoveLine,
+		"leRemoveLine":  leRemoveLine,
+		"leRemoveLines": leRemoveLines,
+		"leViewAll":     leViewAll,
+		"leView":        leViewLine,
+
+		
+
+		// misc
+		"newFunc": NewFunc,
+
+		// global variables
 		"scriptPathG": scriptPathG,
 		"versionG":    versionG,
+		"leBufG":      leBufG,
 
 		
 	}
