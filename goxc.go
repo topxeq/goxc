@@ -166,7 +166,7 @@ import (
 
 // Non GUI related
 
-var versionG = "1.72a"
+var versionG = "1.75a"
 
 // add tk.ToJSONX
 
@@ -708,6 +708,15 @@ func NewFuncStringString(funcA *interface{}) *(func(string) string) {
 	return &f
 }
 
+func NewFuncStringStringB(funcA interface{}) func(string) string {
+	funcT := (funcA).(*execq.Function)
+	f := func(s string) string {
+		return funcT.Call(execq.NewStack(), s).(string)
+	}
+
+	return f
+}
+
 func NewFuncIntError(funcA *interface{}) *(func(int) error) {
 	funcT := (*funcA).(*execq.Function)
 	f := func(n int) error {
@@ -735,6 +744,29 @@ func NewFuncStringError(funcA *interface{}) *(func(string) error) {
 	return &f
 }
 
+func NewFuncStringStringErrorB(funcA interface{}) func(string) (string, error) {
+	funcT := (funcA).(*execq.Function)
+	f := func(s string) (string, error) {
+		r := funcT.Call(execq.NewStack(), s).([]interface{})
+
+		if r == nil {
+			return "", tk.Errf("nil result")
+		}
+
+		if len(r) < 2 {
+			return "", tk.Errf("incorrect return argument count")
+		}
+
+		if r[1] == nil {
+			return r[0].(string), nil
+		}
+
+		return r[0].(string), r[1].(error)
+	}
+
+	return f
+}
+
 func NewFuncStringStringError(funcA *interface{}) *(func(string) (string, error)) {
 	funcT := (*funcA).(*execq.Function)
 	f := func(s string) (string, error) {
@@ -756,6 +788,21 @@ func NewFuncStringStringError(funcA *interface{}) *(func(string) (string, error)
 	}
 
 	return &f
+}
+
+func NewFuncInterfaceInterfaceErrorB(funcA interface{}) func(interface{}) (interface{}, error) {
+	funcT := (funcA).(*execq.Function)
+	f := func(s interface{}) (interface{}, error) {
+		r := funcT.Call(execq.NewStack(), s).([]interface{})
+
+		if r[1] == nil {
+			return r[0].(interface{}), nil
+		}
+
+		return r[0].(interface{}), r[1].(error)
+	}
+
+	return f
 }
 
 func NewFuncInterfaceInterfaceError(funcA *interface{}) *(func(interface{}) (interface{}, error)) {
@@ -799,6 +846,17 @@ func NewFunc(funcA *interface{}) *(func()) {
 	}
 
 	return &f
+}
+
+func NewFuncB(funcA interface{}) func() {
+	funcT := (funcA).(*execq.Function)
+	f := func() {
+		funcT.Call(execq.NewStack())
+
+		return
+	}
+
+	return f
 }
 
 func NewFuncError(funcA *interface{}) *(func() error) {
@@ -913,6 +971,33 @@ func nilToEmpty(vA interface{}, argsA ...string) string {
 
 	return fmt.Sprintf("%v", vA)
 
+}
+
+func isValid(vA interface{}, argsA ...string) bool {
+
+	if vA == nil {
+		return false
+	}
+
+	if vA == spec.Undefined {
+		return false
+	}
+
+	if tk.IsNil(vA) {
+		return false
+	}
+
+	if (argsA != nil) && (len(argsA) > 0) {
+		typeT := fmt.Sprintf("%T", vA)
+
+		if typeT == argsA[0] {
+			return true
+		} else {
+			return false
+		}
+	}
+
+	return true
 }
 
 func logPrint(formatA string, argsA ...interface{}) {
@@ -1091,6 +1176,7 @@ func importQLNonGUIPackages() {
 		// common related
 		"pass":          tk.Pass,
 		"defined":       defined,
+		"isValid":       isValid,
 		"eval":          qlEval,
 		"typeOf":        tk.TypeOfValue,
 		"typeOfReflect": tk.TypeOfValueReflect,
@@ -1189,8 +1275,9 @@ func importQLNonGUIPackages() {
 		"simpleDecode": tk.DecodeStringCustom,
 
 		// input related
-		"getInput":  tk.GetUserInput,
-		"getInputf": tk.GetInputf,
+		"getInput":     tk.GetUserInput,
+		"getInputf":    tk.GetInputf,
+		"getPasswordf": tk.GetInputPasswordf,
 
 		// log related
 		"setLogFile": tk.SetLogFile,
@@ -1203,6 +1290,7 @@ func importQLNonGUIPackages() {
 		"systemCmd":    tk.SystemCmd,
 		"ifFileExists": tk.IfFileExists,
 		"getFileSize":  tk.GetFileSizeCompact,
+		"getFileList":  tk.GetFileList,
 		"loadText":     tk.LoadStringFromFile,
 		"saveText":     tk.SaveStringToFile,
 		"loadBytes":    tk.LoadBytesFromFileE,
@@ -1250,7 +1338,10 @@ func importQLNonGUIPackages() {
 		
 
 		// misc
-		"newFunc": NewFunc,
+		"newFunc":    NewFuncB,
+		"newFuncIIE": NewFuncInterfaceInterfaceErrorB,
+		"newFuncSSE": NewFuncStringStringErrorB,
+		"newFuncSS":  NewFuncStringStringB,
 
 		// global variables
 		"scriptPathG": scriptPathG,
@@ -1263,19 +1354,21 @@ func importQLNonGUIPackages() {
 	qlang.Import("", defaultExports)
 
 	var imiscExports = map[string]interface{}{
-		"NewFunc":                        NewFunc,
-		"NewFuncError":                   NewFuncError,
-		"NewFuncInterface":               NewFuncInterface,
-		"NewFuncInterfaceError":          NewFuncInterfaceError,
-		"NewFuncInterfaceInterfaceError": NewFuncInterfaceInterfaceError,
-		"NewFuncIntString":               NewFuncIntString,
-		"NewFuncIntError":                NewFuncIntError,
-		"NewFuncFloatString":             NewFuncFloatString,
-		"NewFuncFloatStringError":        NewFuncFloatStringError,
-		"NewFuncStringString":            NewFuncStringString,
-		"NewFuncStringError":             NewFuncStringError,
-		"NewFuncStringStringError":       NewFuncStringStringError,
-		"NewFuncIntStringError":          NewFuncIntStringError,
+		"NewFunc":                         NewFunc,
+		"NewFuncError":                    NewFuncError,
+		"NewFuncInterface":                NewFuncInterface,
+		"NewFuncInterfaceError":           NewFuncInterfaceError,
+		"NewFuncInterfaceInterfaceError":  NewFuncInterfaceInterfaceError,
+		"NewFuncInterfaceInterfaceErrorB": NewFuncInterfaceInterfaceErrorB,
+		"NewFuncIntString":                NewFuncIntString,
+		"NewFuncIntError":                 NewFuncIntError,
+		"NewFuncFloatString":              NewFuncFloatString,
+		"NewFuncFloatStringError":         NewFuncFloatStringError,
+		"NewFuncStringString":             NewFuncStringString,
+		"NewFuncStringError":              NewFuncStringError,
+		"NewFuncStringStringError":        NewFuncStringStringError,
+		"NewFuncStringStringErrorB":       NewFuncStringStringErrorB,
+		"NewFuncIntStringError":           NewFuncIntStringError,
 	}
 
 	qlang.Import("imisc", imiscExports)
@@ -1590,6 +1683,22 @@ func runArgs(argsA ...string) interface{} {
 			}
 
 			tk.Pl("Sciter DLL downloaded to application path.")
+
+			// rs = tk.DownloadFile("http://scripts.frenchfriend.net/pub/webview.dll", applicationPathT, "webview.dll", false)
+
+			// if tk.IsErrorString(rs) {
+
+			// 	return tk.Errf("failed to download webview DLL file.")
+			// }
+
+			// rs = tk.DownloadFile("http://scripts.frenchfriend.net/pub/WebView2Loader.dll", applicationPathT, "WebView2Loader.dll", false)
+
+			// if tk.IsErrorString(rs) {
+
+			// 	return tk.Errf("failed to download webview DLL file.")
+			// }
+
+			// tk.Pl("webview DLL downloaded to application path.")
 
 			return nil
 		}
