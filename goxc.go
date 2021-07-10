@@ -166,7 +166,7 @@ import (
 
 // Non GUI related
 
-var versionG = "1.75a"
+var versionG = "1.76a"
 
 // add tk.ToJSONX
 
@@ -1271,6 +1271,7 @@ func importQLNonGUIPackages() {
 		"jsonEncode":   tk.ObjectToJSON,
 		"jsonDecode":   tk.JSONToObject,
 		"toJSON":       tk.ToJSONX,
+		"fromJSON":     tk.FromJSONWithDefault,
 		"simpleEncode": tk.EncodeStringCustomEx,
 		"simpleDecode": tk.DecodeStringCustom,
 

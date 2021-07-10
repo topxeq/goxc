@@ -37,3 +37,6 @@ replace github.com/topxeq/xmlx v0.2.0 => ../xmlx
 replace github.com/topxeq/sqltk v0.0.0 => ../sqltk
 
 replace github.com/topxeq/qlang v0.0.0 => ../qlang
+
+replace github.com/topxeq/text v0.0.0 => ../text
+
