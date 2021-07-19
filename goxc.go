@@ -167,7 +167,7 @@ import (
 
 // Non GUI related
 
-var versionG = "1.83a"
+var versionG = "1.85a"
 
 // add tk.ToJSONX
 
@@ -1384,21 +1384,22 @@ func importQLNonGUIPackages() {
 		"logPrint":   logPrint,              // 同时输出到标准输出和日志文件
 
 		// system related 系统相关
-		"getClipText":       tk.GetClipText,        // 从系统剪贴板获取文本，例： textT = getClipText()
-		"setClipText":       tk.SetClipText,        // 设定系统剪贴板中的文本，例： setClipText("测试")
-		"systemCmd":         tk.SystemCmd,          // 执行一条系统命令，例如： systemCmd("cmd", "/k", "copy a.txt b.txt")
-		"ifFileExists":      tk.IfFileExists,       // 判断文件是否存在
-		"fileExists":        tk.IfFileExists,       // 等同于ifFileExists
-		"joinPath":          filepath.Join,         // 连接文件路径，等同于Go语言标准库中的path/filepath.Join
-		"getFileSize":       tk.GetFileSizeCompact, // 获取文件大小
-		"getFileList":       tk.GetFileList,        // 获取指定目录下的符合条件的所有文件，例：listT = getFileList(pathT, "-recursive", "-pattern=*", "-exclusive=*.txt", "-verbose")
-		"loadText":          tk.LoadStringFromFile, // 从文件中读取文本字符串，函数定义：func loadText(fileNameA string) string，出错时返回TXERROR:开头的字符串指明原因
-		"saveText":          tk.SaveStringToFile,   // 将字符串保存到文件，函数定义： func saveText(strA string, fileA string) string
-		"loadBytes":         tk.LoadBytesFromFileE, // 从文件中读取二进制数据，函数定义：func loadBytes(fileNameA string, numA ...int) ([]byte, error)
-		"saveBytes":         tk.SaveBytesToFile,    // 将二进制数据保存到文件，函数定义： func saveBytes(bytesA []byte, fileA string) string
-		"sleep":             tk.Sleep,              // 休眠指定的秒数，例：sleep(30)，可以是小数
-		"sleepSeconds":      tk.SleepSeconds,       // 基本等同于sleep，但只能是整数秒
-		"sleepMilliSeconds": tk.SleepMilliSeconds,  // 类似于sleep，但单位是毫秒
+		"getClipText":       tk.GetClipText,                 // 从系统剪贴板获取文本，例： textT = getClipText()
+		"setClipText":       tk.SetClipText,                 // 设定系统剪贴板中的文本，例： setClipText("测试")
+		"systemCmd":         tk.SystemCmd,                   // 执行一条系统命令，例如： systemCmd("cmd", "/k", "copy a.txt b.txt")
+		"openFile":          tk.RunWinFileWithSystemDefault, // 用系统默认的方式打开一个文件，例如： openFile("a.jpg")
+		"ifFileExists":      tk.IfFileExists,                // 判断文件是否存在
+		"fileExists":        tk.IfFileExists,                // 等同于ifFileExists
+		"joinPath":          filepath.Join,                  // 连接文件路径，等同于Go语言标准库中的path/filepath.Join
+		"getFileSize":       tk.GetFileSizeCompact,          // 获取文件大小
+		"getFileList":       tk.GetFileList,                 // 获取指定目录下的符合条件的所有文件，例：listT = getFileList(pathT, "-recursive", "-pattern=*", "-exclusive=*.txt", "-verbose")
+		"loadText":          tk.LoadStringFromFile,          // 从文件中读取文本字符串，函数定义：func loadText(fileNameA string) string，出错时返回TXERROR:开头的字符串指明原因
+		"saveText":          tk.SaveStringToFile,            // 将字符串保存到文件，函数定义： func saveText(strA string, fileA string) string
+		"loadBytes":         tk.LoadBytesFromFileE,          // 从文件中读取二进制数据，函数定义：func loadBytes(fileNameA string, numA ...int) ([]byte, error)
+		"saveBytes":         tk.SaveBytesToFile,             // 将二进制数据保存到文件，函数定义： func saveBytes(bytesA []byte, fileA string) string
+		"sleep":             tk.Sleep,                       // 休眠指定的秒数，例：sleep(30)，可以是小数
+		"sleepSeconds":      tk.SleepSeconds,                // 基本等同于sleep，但只能是整数秒
+		"sleepMilliSeconds": tk.SleepMilliSeconds,           // 类似于sleep，但单位是毫秒
 
 		// command-line 命令行处理相关
 		"getParameter":   tk.GetParameterByIndexWithDefaultValue, // 按顺序序号获取命令行参数，其中0代表第一个参数，也就是软件名称或者命令名称，1开始才是第一个参数，注意参数不包括开关，即类似-verbose=true这样的，函数定义：func getParameter(argsA []string, idxA int, defaultA string) string
@@ -1455,7 +1456,9 @@ func importQLNonGUIPackages() {
 		//		fatalf("查询数据库错误：%v", dbT)
 		//	}
 		// pl("在数据库中共有符合条件的%v条记录", sqlRsT)
-		"dbQueryString": sqltk.QueryStringX, // 与dbQueryCount类似，但主要支持结果只有一个字符串的查询
+		"dbQueryString":        sqltk.QueryStringX,       // 与dbQueryCount类似，但主要支持结果只有一个字符串的查询
+		"dbFormat":             sqltk.FormatSQLValue,     // 将字符串转换为可用在SQL语句中的字符串（将单引号变成双单引号）
+		"dbOneLineRecordToMap": sqltk.OneLineRecordToMap, // 将只有一行（加标题行两行）的SQL语句查询结果（[][]string格式）变为类似{"Field1": "Value1", "Field2": "Value2"}的map[string]string格式
 
 		// line editor related 内置行文本编辑器有关
 		"leClear":       leClear,       // 清空行文本编辑器缓冲区，例：leClear()
@@ -1490,6 +1493,8 @@ func importQLNonGUIPackages() {
 		"newFuncSSE":    NewFuncStringStringErrorB,       // 将Gox语言中的定义的函数转换为Go语言中类似 func f(a string) (string, error) 的形式
 		"newFuncSS":     NewFuncStringStringB,            // 将Gox语言中的定义的函数转换为Go语言中类似 func f(a string) string 的形式
 		"newStringRing": tk.NewStringRing,                // 创建一个字符串环，大小固定，后进的会将先进的最后一个顶出来
+		"getCfgStr":     getCfgString,                    // 从根目录（Windows下为C:\，*nix下为/）的gox子目录中获取文件名为参数1的配置项字符串
+		"setCfgStr":     setCfgString,                    // 向根目录（Windows下为C:\，*nix下为/）的gox子目录中写入文件名为参数1，内容为参数2的配置项字符串，例：saveCfgStr("timeout", "30")
 
 		// global variables 全局变量
 		"timeFormatG":        tk.TimeFormat,        // 用于时间处理时的时间格式，值为"2006-01-02 15:04:05"
@@ -1957,6 +1962,7 @@ func runArgs(argsA ...string) interface{} {
 	ifCloudT := tk.IfSwitchExistsWhole(argsT, "-cloud")
 	sshT := tk.GetSwitchWithDefaultValue(argsT, "-ssh=", "")
 	ifViewT := tk.IfSwitchExistsWhole(argsT, "-view")
+	ifOpenT := tk.IfSwitchExistsWhole(argsT, "-open")
 	// ifCompileT := tk.IfSwitchExistsWhole(argsT, "-compile")
 
 	verboseG = tk.IfSwitchExistsWhole(argsT, "-verbose")
@@ -2093,6 +2099,12 @@ func runArgs(argsA ...string) interface{} {
 
 	if ifViewT {
 		tk.Pl("%v", fcT)
+
+		return nil
+	}
+
+	if ifOpenT {
+		tk.RunWinFileWithSystemDefault(scriptPathG)
 
 		return nil
 	}
@@ -2281,7 +2293,26 @@ func getCfgString(fileNameA string) string {
 
 	}
 
-	return tk.ErrStrF("failed to get config string")
+	return tk.ErrStrF("failed to get config string: %v", errT)
+}
+
+func setCfgString(fileNameA string, strA string) string {
+	basePathT, errT := tk.EnsureBasePath("gox")
+
+	if errT == nil {
+		cfgPathT := tk.JoinPath(basePathT, fileNameA)
+
+		rsT := tk.SaveStringToFile(strA, cfgPathT)
+
+		if tk.IsErrorString(rsT) {
+			return tk.ErrStrF("failed to save config string: %v", tk.GetErrorString(rsT))
+		}
+
+		return ""
+
+	}
+
+	return tk.ErrStrF("failed to save config string: %v", errT)
 }
 
 var editFileScriptG = `
@@ -3003,6 +3034,22 @@ data, _ := w.Call("getScreenWH") //, sciter.NewValue(10), sciter.NewValue(20))
 // fmt.Println("data:", data.String())
 
 fileNameT := tk.GetParameterByIndexWithDefaultValue(argsG, 0, "")
+
+if ifSwitchExists(argsG, "-gopath") {
+	if (!strEndsWith(fileNameT, ".gox")) && (!strEndsWith(fileNameT, ".ql")) {
+		fileNameT += ".gox"
+	}
+
+	fileNameT = joinPath(tk.GetEnv("GOPATH"), "src", "github.com", "topxeq", "gox", "scripts", fileNameT)
+}
+
+if ifSwitchExists(argsG, "-local") {
+	if (!strEndsWith(fileNameT, ".gox")) && (!strEndsWith(fileNameT, ".ql")) {
+		fileNameT += ".gox"
+	}
+
+	fileNameT := getCfgString("localScriptPath.cfg")
+}
 
 w.Call("editFile", sciter.NewValue(fileNameT))
 
