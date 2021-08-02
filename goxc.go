@@ -169,7 +169,7 @@ import (
 
 // Non GUI related
 
-var versionG = "1.90a"
+var versionG = "1.92a"
 
 // add tk.ToJSONX
 
@@ -1322,6 +1322,8 @@ func importQLNonGUIPackages() {
 		// string related 字符串相关
 		"trim":             tk.Trim,                   // 取出字符串前后的空白字符
 		"strTrim":          tk.Trim,                   // 等同于trim
+		"trimSafely":       tk.TrimSafely,             // 取出字符串前后的空白字符，非字符串则返回默认值空，可以通过第二个（可选）参数设置默认值
+		"trimx":            tk.TrimSafely,             // 等同于trimSafely
 		"toLower":          strings.ToLower,           // 字符串转小写
 		"toUpper":          strings.ToUpper,           // 字符串转大写
 		"strContains":      strings.Contains,          // 判断字符串中是否包含某个字串
@@ -1440,7 +1442,7 @@ func importQLNonGUIPackages() {
 		"fileExists":        tk.IfFileExists,                // 等同于ifFileExists
 		"joinPath":          filepath.Join,                  // 连接文件路径，等同于Go语言标准库中的path/filepath.Join
 		"getFileSize":       tk.GetFileSizeCompact,          // 获取文件大小
-		"getFileList":       tk.GetFileList,                 // 获取指定目录下的符合条件的所有文件，例：listT = getFileList(pathT, "-recursive", "-pattern=*", "-exclusive=*.txt", "-verbose")
+		"getFileList":       tk.GetFileList,                 // 获取指定目录下的符合条件的所有文件，例：listT = getFileList(pathT, "-recursive", "-pattern=*", "-exclusive=*.txt", "-withDir", "-verbose")
 		"loadText":          tk.LoadStringFromFile,          // 从文件中读取文本字符串，函数定义：func loadText(fileNameA string) string，出错时返回TXERROR:开头的字符串指明原因
 		"saveText":          tk.SaveStringToFile,            // 将字符串保存到文件，函数定义： func saveText(strA string, fileA string) string
 		"loadBytes":         tk.LoadBytesFromFile,           // 从文件中读取二进制数据，函数定义：func loadBytes(fileNameA string, numA ...int) interface{}，返回[]byte或error，第二个参数没有或者小于零的话表示读取所有
@@ -1458,6 +1460,7 @@ func importQLNonGUIPackages() {
 		"getFloatSwitch": tk.GetSwitchWithDefaultFloatValue,      // 与getSwitch类似，但获取到的是浮点数（float64）的值
 		"switchExists":   tk.IfSwitchExistsWhole,                 // 判断命令行参数中是否存在开关（完整的，），用法：flag = switchExists(args, "-restart")
 		"ifSwitchExists": tk.IfSwitchExistsWhole,                 // 等同于switchExists
+		"parseCommand":   tk.ParseCommandLine,                    // 等同于switchExists
 
 		// network related 网络相关
 		"newSSHClient": tk.NewSSHClient, // 新建一个SSH连接，以便执行各种SSH操作，例：
@@ -3226,7 +3229,7 @@ w.DefineFunction("decryptText", func(args) {
 })
 
 w.DefineFunction("runScript", func(args) {
-	rs := runScript(args[0].String(), "", args[1].String())
+	rs := runScript(args[0].String(), "", parseCommand(args[1].String())[0]...)
 	return sciter.NewValue(tk.Spr("%v", rs))
 })
 
