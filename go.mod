@@ -17,9 +17,9 @@ require (
 	github.com/stretchr/objx v0.3.0 // indirect
 	github.com/topxeq/imagetk v0.0.0-20210112052041-d3bf39e7174f // indirect
 	github.com/topxeq/qlang v0.0.0
-	github.com/topxeq/sqltk v0.0.0 // indirect
+	github.com/topxeq/sqltk v0.0.0
 	github.com/topxeq/tk v0.0.0
-	golang.org/x/text v0.3.5 // indirect
+	github.com/xuri/excelize/v2 v2.4.1 // indirect
 	gonum.org/v1/gonum v0.8.1 // indirect
 	gopkg.in/check.v1 v1.0.0-20200902074654-038fdea0a05b // indirect
 	gopkg.in/ini.v1 v1.62.0 // indirect
@@ -39,4 +39,3 @@ replace github.com/topxeq/sqltk v0.0.0 => ../sqltk
 replace github.com/topxeq/qlang v0.0.0 => ../qlang
 
 replace github.com/topxeq/text v0.0.0 => ../text
-
