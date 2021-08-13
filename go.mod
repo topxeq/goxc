@@ -19,7 +19,6 @@ require (
 	github.com/topxeq/qlang v0.0.0
 	github.com/topxeq/sqltk v0.0.0
 	github.com/topxeq/tk v0.0.0
-	github.com/xuri/excelize/v2 v2.4.1 // indirect
 	gonum.org/v1/gonum v0.8.1 // indirect
 	gopkg.in/check.v1 v1.0.0-20200902074654-038fdea0a05b // indirect
 	gopkg.in/ini.v1 v1.62.0 // indirect
