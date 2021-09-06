@@ -5,9 +5,9 @@ go 1.14
 require (
 	github.com/ajstarks/svgo v0.0.0-20200725142600-7a3c8b57fecb // indirect
 	github.com/beevik/etree v1.1.1-0.20200718192613-4a2f8b9d084c // indirect
-	github.com/denisenkom/go-mssqldb v0.9.0
-	github.com/go-sql-driver/mysql v1.5.0
-	github.com/godror/godror v0.23.1
+	github.com/denisenkom/go-mssqldb v0.10.0
+	github.com/go-sql-driver/mysql v1.6.0
+	github.com/godror/godror v0.25.3
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
 	github.com/json-iterator/go v1.1.10 // indirect
 	github.com/jung-kurt/gofpdf v1.16.2 // indirect
