@@ -173,7 +173,7 @@ import (
 
 // Non GUI related
 
-var versionG = "3.1a"
+var versionG = "3.2a"
 
 // add tk.ToJSONX
 
@@ -712,11 +712,13 @@ func newCharFunc(funcA interface{}) *charlang.Function {
 
 			r := funcT.Call(execq.NewStack(), s...).([]interface{})
 
-			if r[1] == nil {
-				return charlang.ConvertToObject(r[0].(interface{})), nil
-			}
+			return charlang.ConvertToObject(r), nil
 
-			return charlang.ConvertToObject(r[0].(interface{})), charlang.NewCommonError(r[1].(error).Error())
+			// if r[1] == nil {
+			// 	return charlang.ConvertToObject(r[0].(interface{})), nil
+			// }
+
+			// return charlang.ConvertToObject(r[0].(interface{})), charlang.NewCommonError(r[1].(error).Error())
 		},
 	}
 }
@@ -1572,9 +1574,11 @@ func importQLNonGUIPackages() {
 		"fileExists":        tk.IfFileExists,                // 等同于ifFileExists
 		"joinPath":          filepath.Join,                  // 连接文件路径，等同于Go语言标准库中的path/filepath.Join
 		"getFileSize":       tk.GetFileSizeCompact,          // 获取文件大小
+		"getFileInfo":       tk.GetFileInfo,                 // 获取文件信息，返回map[string]string
 		"getFileList":       tk.GetFileList,                 // 获取指定目录下的符合条件的所有文件，例：listT = getFileList(pathT, "-recursive", "-pattern=*", "-exclusive=*.txt", "-withDir", "-verbose")
 		"createFile":        tk.CreateFile,                  // 等同于tk.CreateFile
 		"createTempFile":    tk.CreateTempFile,              // 等同于tk.CreateTempFile
+		"copyFile":          tk.CopyFile,                    // 等同于tk.CopyFile，可带参数-force和-bufferSize=100000
 		"removeFile":        tk.RemoveFile,                  // 等同于tk.RemoveFile
 		"renameFile":        tk.RenameFile,                  // 等同于tk.RenameFile
 		"loadText":          tk.LoadStringFromFile,          // 从文件中读取文本字符串，函数定义：func loadText(fileNameA string) string，出错时返回TXERROR:开头的字符串指明原因
@@ -1625,6 +1629,8 @@ func importQLNonGUIPackages() {
 		"formToMap":             tk.FormToMap,                     // 将HTTP请求中的form内容转换为map（字典/映射类型），例：mapT = formToMap(req.Form)
 		"generateJSONResponse":  tk.GenerateJSONPResponseWithMore, // 生成Web API服务器的JSON响应，支持JSONP，例：return generateJSONResponse("fail", sprintf("数据库操作失败：%v", errT), req)
 		"writeResp":             tk.WriteResponse,                 // 写http输出，函数原型writeResp(resA http.ResponseWriter, strA string) error
+		"writeRespHeader":       tk.WriteResponseHeader,           // 写http响应头，函数原型writeRespHeader(resA http.ResponseWriter, argsA ...interface{}) error
+		"setRespHeader":         tk.SetResponseHeader,             // 设置http响应头，函数原型setRespHeader(resA http.ResponseWriter, keyA string, valueA string) error
 		"replaceHtmlByMap":      tk.ReplaceHtmlByMap,
 		"cleanHtmlPlaceholders": tk.CleanHtmlPlaceholders,
 
