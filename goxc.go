@@ -173,7 +173,7 @@ import (
 
 // Non GUI related
 
-var versionG = "3.2a"
+var versionG = "3.23a"
 
 // add tk.ToJSONX
 
@@ -1453,12 +1453,13 @@ func importQLNonGUIPackages() {
 		"getNowString":         tk.GetNowTimeStringFormal, // 等同于getNowStr
 		"getNowStrCompact":     tk.GetNowTimeString,       // 获取一个简化的表示当前时间的字符串，格式：20200202080915
 		"getNowStringCompact":  tk.GetNowTimeStringFormal, // 等同于getNowStringCompact
-		"genRandomStr":         tk.GenerateRandomString,   // 生成随机字符串，函数定义： (minCharA, maxCharA int, hasUpperA, hasLowerA, hasDigitA, hasSpecialCharA, hasSpaceA bool, hasInvalidChars bool) string
+		"genRandomStr":         tk.GenerateRandomStringX,  // 生成随机字符串，函数定义： genRandomStr("-min=6", "-max=8", "-noUpper", "-noLower", "-noDigit", "-special", "-space", "-invalid")
 		"generateRandomString": tk.GenerateRandomString,   // 生成随机字符串，函数定义： (minCharA, maxCharA int, hasUpperA, hasLowerA, hasDigitA, hasSpecialCharA, hasSpaceA bool, hasInvalidChars bool) string
 
 		// regex related 正则表达式相关
 		"regMatch":        tk.RegMatchX,          // 判断某字符串是否完整符合某表达式，例： if regMatch(mailT, `^([A-Za-z0-9_\-\.])+\@([A-Za-z0-9_\-\.])+\.([A-Za-z]{2,8})$`) {...}
 		"regContains":     tk.RegContainsX,       // 判断某字符串是否包含符合正则表达式的子串，例： if regContains("abccd", "b.c") {...}
+		"regContainsIn":   tk.RegContainsIn,      // 判断字符串中是否包含符合正则表达式的某几个字串
 		"regFind":         tk.RegFindFirstX,      // 根据正则表达式在字符串中寻找第一个匹配，函数定义： func regFind(strA, patternA string, groupA int) string
 		"regFindAll":      tk.RegFindAllX,        // 根据正则表达式在字符串中寻找所有匹配，函数定义： func regFindAll(strA, patternA string, groupA int) []string
 		"regFindIndex":    tk.RegFindFirstIndexX, // 根据正则表达式在字符串中第一个匹配的为止，函数定义： func regFindIndex(strA, patternA string) (int, int)
@@ -1476,6 +1477,7 @@ func importQLNonGUIPackages() {
 		"timeToStr":    tk.FormatTime,               // 时间转字符串，函数定义: timeToStr(timeA time.Time, formatA ...string) string
 		"formatTime":   tk.FormatTime,               // 等同于timeToStr
 		"strToTime":    strToTime,                   // 字符串转时间
+		"toTime":       tk.ToTime,                   // 字符串或时间转时间
 		"bytesToData":  tk.BytesToData,              // 字节数组转任意类型变量，可选参数-endian=B或L指定使用BigEndian字节顺序还是LittleEndian
 		"dataToBytes":  tk.DataToBytes,              // 任意类型值转字节数组，可选参数-endian=B或L指定使用BigEndian字节顺序还是LittleEndian
 		"toStr":        tk.ToStr,                    // 任意值转字符串
