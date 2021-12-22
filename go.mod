@@ -43,3 +43,5 @@ replace github.com/topxeq/text v0.0.0 => ../text
 replace github.com/topxeq/charlang v0.0.0 => ../charlang
 
 replace github.com/topxeq/goph v0.0.0 => ../goph
+
+replace github.com/topxeq/go-sciter v0.0.0 => ../go-sciter
