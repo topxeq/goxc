@@ -178,7 +178,7 @@ import (
 
 // Non GUI related
 
-var versionG = "3.51a"
+var versionG = "3.53a"
 
 // add tk.ToJSONX
 
@@ -363,6 +363,10 @@ func getMagic(numberA int) string {
 }
 
 // native functions 内置函数
+
+func newStringBuilder() *strings.Builder {
+	return new(strings.Builder)
+}
 
 func fromJSONX(jsonA string) interface{} {
 	rsT, errT := tk.FromJSON(jsonA)
@@ -1528,12 +1532,15 @@ func importQLNonGUIPackages() {
 		"strJoin":              strJoin,                   // 连接一个字符串数组，以指定的分隔符，例： s = strJoin(listT, "\n")
 		"strSplit":             strings.Split,             // 拆分一个字符串为数组，例： listT = strSplit(strT, "\n")
 		"splitLines":           tk.SplitLines,             // 相当于strSplit(strT, "\n")
+		"strSplitLines":        tk.SplitLines,             // 相当于splitLines
 		"startsWith":           tk.StartsWith,             // 判断字符串是否以某子串开头
 		"strStartsWith":        tk.StartsWith,             // 等同于startsWith
 		"endsWith":             tk.EndsWith,               // 判断字符串是否以某子串结尾
 		"strEndsWith":          tk.EndsWith,               // 等同于endsWith
 		"strIn":                tk.InStrings,              // 判断字符串是否在一个字符串列表中出现，函数定义： strIn(strA string, argsA ...string) bool，第一个可变参数如果以“-”开头，将表示参数开关，-it表示忽略大小写，并且trim再比较（strA并不trim）
 		"strFindAll":           tk.FindSubStringAll,       // 寻找字符串中某个子串出现的所有位置，函数定义： func strFindAll(strA string, subStrA string) [][]int，每个匹配是两个整数，分别表示开头和结尾（不包含）
+		"newStringBuilder":     newStringBuilder,          // 新建一个strings.Builder对象
+		"newStringBuffer":      newStringBuilder,          // 同newStringBuilder
 		"getNowStr":            tk.GetNowTimeStringFormal, // 获取一个表示当前时间的字符串，格式：2020-02-02 08:09:15
 		"getNowString":         tk.GetNowTimeStringFormal, // 等同于getNowStr
 		"getNowStrCompact":     tk.GetNowTimeString,       // 获取一个简化的表示当前时间的字符串，格式：20200202080915
@@ -1555,22 +1562,23 @@ func importQLNonGUIPackages() {
 		"regSplit":        tk.RegSplitX,          // 根据正则表达式分割字符串（以符合条件的匹配来分割），函数定义： regSplit(strA, patternA string, nA ...int) []string
 
 		// conversion related 转换相关
-		"nilToEmpty":   nilToEmpty,                  // 将nil、error等值都转换为空字符串，其他的转换为字符串, 加-nofloat参数将浮点数转换为整数，-trim参数将结果trim
-		"nilToEmptyOk": nilToEmptyOk,                // 将nil、error等值都转换为空字符串，其他的转换为字符串, 加-nofloat参数将浮点数转换为整数，-trim参数将结果trim，第二个返回值是bool类型，如果值是undefined，则返回false，其他情况为true
-		"intToStr":     tk.IntToStrX,                // 整数转字符串
-		"strToInt":     tk.StrToIntWithDefaultValue, // 字符串转整数
-		"floatToStr":   tk.Float64ToStr,             // 浮点数转字符串
-		"strToFloat":   tk.StrToFloat64,             // 字符串转浮点数，如果第二个参数（可选）存在，则默认错误时返回该值，否则错误时返回-1
-		"timeToStr":    tk.FormatTime,               // 时间转字符串，函数定义: timeToStr(timeA time.Time, formatA ...string) string
-		"formatTime":   tk.FormatTime,               // 等同于timeToStr
-		"strToTime":    strToTime,                   // 字符串转时间
-		"toTime":       tk.ToTime,                   // 字符串或时间转时间
-		"bytesToData":  tk.BytesToData,              // 字节数组转任意类型变量，可选参数-endian=B或L指定使用BigEndian字节顺序还是LittleEndian
-		"dataToBytes":  tk.DataToBytes,              // 任意类型值转字节数组，可选参数-endian=B或L指定使用BigEndian字节顺序还是LittleEndian
-		"toStr":        tk.ToStr,                    // 任意值转字符串
-		"toInt":        tk.ToInt,                    // 任意值转整数
-		"toFloat":      tk.ToFloat,                  // 任意值转浮点数
-		"toByte":       tk.ToByte,                   // 任意值转字节
+		"nilToEmpty":      nilToEmpty,                     // 将nil、error等值都转换为空字符串，其他的转换为字符串, 加-nofloat参数将浮点数转换为整数，-trim参数将结果trim
+		"nilToEmptyOk":    nilToEmptyOk,                   // 将nil、error等值都转换为空字符串，其他的转换为字符串, 加-nofloat参数将浮点数转换为整数，-trim参数将结果trim，第二个返回值是bool类型，如果值是undefined，则返回false，其他情况为true
+		"intToStr":        tk.IntToStrX,                   // 整数转字符串
+		"strToInt":        tk.StrToIntWithDefaultValue,    // 字符串转整数
+		"floatToStr":      tk.Float64ToStr,                // 浮点数转字符串
+		"strToFloat":      tk.StrToFloat64,                // 字符串转浮点数，如果第二个参数（可选）存在，则默认错误时返回该值，否则错误时返回-1
+		"timeToStr":       tk.FormatTime,                  // 时间转字符串，函数定义: timeToStr(timeA time.Time, formatA ...string) string，formatA可为"2006-01-02 15:04:05"（默认值）等字符串，为compact代表“20060102150405”
+		"timeStampToTime": tk.GetTimeFromUnixTimeStampMid, // Unix时间戳转时间（time.Time），支持10位和13位的时间戳，用法: timeT = timeToStr(timeStampToTime("1641139200"), "compact") ，得到20220103000000
+		"formatTime":      tk.FormatTime,                  // 等同于timeToStr
+		"strToTime":       strToTime,                      // 字符串转时间
+		"toTime":          tk.ToTime,                      // 字符串或时间转时间
+		"bytesToData":     tk.BytesToData,                 // 字节数组转任意类型变量，可选参数-endian=B或L指定使用BigEndian字节顺序还是LittleEndian
+		"dataToBytes":     tk.DataToBytes,                 // 任意类型值转字节数组，可选参数-endian=B或L指定使用BigEndian字节顺序还是LittleEndian
+		"toStr":           tk.ToStr,                       // 任意值转字符串
+		"toInt":           tk.ToInt,                       // 任意值转整数
+		"toFloat":         tk.ToFloat,                     // 任意值转浮点数
+		"toByte":          tk.ToByte,                      // 任意值转字节
 
 		"hexToBytes": tk.HexToBytes, // 将16进制字符串转换为字节数组([]byte)
 		"bytesToHex": tk.BytesToHex, // 将字节数组([]byte)转换为16进制字符串
