@@ -178,7 +178,7 @@ import (
 
 // Non GUI related
 
-var versionG = "3.53a"
+var versionG = "3.55a"
 
 // add tk.ToJSONX
 
@@ -368,7 +368,13 @@ func newStringBuilder() *strings.Builder {
 	return new(strings.Builder)
 }
 
-func fromJSONX(jsonA string) interface{} {
+func fromJSONX(vA interface{}) interface{} {
+	jsonA, ok := vA.(string)
+
+	if !ok {
+		return tk.Errf("string type required")
+	}
+
 	rsT, errT := tk.FromJSON(jsonA)
 
 	if errT != nil {
@@ -1637,7 +1643,9 @@ func importQLNonGUIPackages() {
 		"urlEncodeX":         tk.UrlEncode,            // 增强URL编码（会将+和\n等也编码）
 		"urlDecode":          tk.UrlDecode,            // URL解码
 		"base64Encode":       tk.EncodeToBase64,       // Base64编码，输入参数是[]byte字节数组
+		"toBase64":           tk.ToBase64,             // Base64编码，输入参数是[]byte字节数组或字符串
 		"base64Decode":       tk.DecodeFromBase64,     // base64解码
+		"fromBase64":         tk.DecodeFromBase64,     // 同base64Decode，base64解码
 		"md5Encode":          tk.MD5Encrypt,           // MD5编码
 		"md5":                tk.MD5Encrypt,           // 等同于md5Encode
 		"jsonEncode":         tk.ObjectToJSON,         // JSON编码
