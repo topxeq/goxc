@@ -180,7 +180,7 @@ import (
 
 // Non GUI related
 
-var versionG = "3.58a"
+var versionG = "3.59a"
 
 // add tk.ToJSONX
 
@@ -1650,6 +1650,8 @@ func importQLNonGUIPackages() {
 		"toInt":           tk.ToInt,                       // 任意值转整数
 		"toFloat":         tk.ToFloat,                     // 任意值转浮点数
 		"toByte":          tk.ToByte,                      // 任意值转字节
+		"toSimpleMap":     tk.SimpleMapToString,           // 将一个map（map[string]string或map[string]interface{}）转换为Simple Map字符串
+		"fromSimpleMap":   tk.LoadSimpleMapFromString,     // 将一个Simple Map字符串转换为map[string]string
 
 		"hexToBytes": tk.HexToBytes, // 将16进制字符串转换为字节数组([]byte)
 		"bytesToHex": tk.BytesToHex, // 将字节数组([]byte)转换为16进制字符串
@@ -1681,7 +1683,8 @@ func importQLNonGUIPackages() {
 
 		// object related 对象有关
 
-		"newObject": tk.NewObject, // 新建一个对象，目前支持stack, list, arrayList等，用法：objT = newObject("stack")
+		"newObject": tk.NewObject, // 新建一个对象，目前支持stack, set(hashset), treeset, list(arraylist), linklist(linkedlist), tree(btree), stringBuffer(stringBuilder), bytesBuffer, error(err), errorString(errStr)等，用法：objT = newObject("stack")或objT = newObject("tree", 5)创建五层的btree树等
+		"newObj":    tk.NewObject, // 等同于newObject
 
 		// error related 错误处理相关
 		"isError":          tk.IsError,           // 判断表达式的值是否为error类型
