@@ -180,7 +180,7 @@ import (
 
 // Non GUI related
 
-var versionG = "3.65a"
+var versionG = "v3.6.9"
 
 // add tk.ToJSONX
 
@@ -354,8 +354,11 @@ func getMagic(numberA int) string {
 	if typeT == 8 {
 		fcT = tk.DownloadPageUTF8(tk.Spr("https://gitee.com/topxeq/gox/raw/master/magic/%v.gox", numberA), nil, "", 30)
 
+	} else if typeT == 9 {
+		fcT = tk.DownloadPageUTF8(tk.Spr("https://script.topget.org/magic/%v.gox", numberA), nil, "", 30)
+
 	} else if typeT == 7 {
-		fcT = tk.DownloadPageUTF8(tk.Spr("https: //raw.githubusercontent.com/topxeq/gox/master/magic/%v.gox", numberA), nil, "", 30)
+		fcT = tk.DownloadPageUTF8(tk.Spr("https://raw.githubusercontent.com/topxeq/gox/master/magic/%v.gox", numberA), nil, "", 30)
 	} else {
 		return tk.GenerateErrorString("invalid magic number")
 	}
@@ -1695,6 +1698,7 @@ func importQLNonGUIPackages() {
 
 		// input related 输入相关
 		"getChar":      tk.GetChar,           // 从命令行获取用户的输入，成功返回一个表示字符字符串(控制字符代码+字符代码)，否则返回error对象
+		"getChar2":     tk.GetChar2,          // 从命令行获取用户的输入，成功返回一个表示字符ASCII码的字符串，否则返回error对象
 		"getInput":     tk.GetUserInput,      // 从命令行获取用户的输入
 		"getInputf":    tk.GetInputf,         // 从命令行获取用户的输入，同时可以用printf先输出一个提示信息
 		"getPasswordf": tk.GetInputPasswordf, // 从命令行获取密码输入，输入信息将不显示
@@ -2523,6 +2527,12 @@ func runArgs(argsA ...string) interface{} {
 		return nil
 	}
 
+	cmdT := tk.GetSwitchWithDefaultValue(argsT, "-cmd=", "")
+
+	if cmdT != "" {
+		scriptT = "CMD"
+	}
+
 	if scriptT == "" && (!ifClipT) && (!ifEmbedT) && (!ifInExeT) {
 
 		// autoPathT := filepath.Join(tk.GetApplicationPath(), "auto.gox")
@@ -2639,6 +2649,15 @@ func runArgs(argsA ...string) interface{} {
 
 	if ifInExeT && inExeCodeT != "" && !tk.IfSwitchExistsWhole(os.Args, "-noin") {
 		fcT = inExeCodeT
+
+		scriptPathG = ""
+	} else if cmdT != "" {
+		tk.Pl("run cmd(%v)", cmdT)
+		fcT = cmdT
+
+		if tk.IfSwitchExistsWhole(os.Args, "-urlDecode") {
+			fcT = tk.UrlDecode(fcT)
+		}
 
 		scriptPathG = ""
 	} else if ifMagicT {
