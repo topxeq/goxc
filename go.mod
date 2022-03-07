@@ -16,9 +16,9 @@ require (
 	github.com/stretchr/objx v0.3.0 // indirect
 	github.com/topxeq/charlang v0.0.0-20220224014453-a505ad57cf4e
 	github.com/topxeq/imagetk v0.0.0-20210112052041-d3bf39e7174f // indirect
-	github.com/topxeq/qlang v0.0.0-20220224015111-4e1d7d54c09e
+	github.com/topxeq/qlang v0.0.0-20220307002845-8a5031fe6e11
 	github.com/topxeq/sqltk v0.0.0-20220228051745-2503a98a4e47
-	github.com/topxeq/tk v1.0.0
+	github.com/topxeq/tk v1.0.1-0.20220307002337-1ee03d3d8831
 	gonum.org/v1/gonum v0.8.1 // indirect
 	gopkg.in/check.v1 v1.0.0-20200902074654-038fdea0a05b // indirect
 	gopkg.in/ini.v1 v1.62.0 // indirect
