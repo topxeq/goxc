@@ -175,12 +175,14 @@ import (
 
 	
 
+	"gitee.com/topxeq/xie"
+
 	"github.com/topxeq/tk"
 )
 
 // Non GUI related
 
-var versionG = "v3.7.3"
+var versionG = "v3.7.5"
 
 // add tk.ToJSONX
 
@@ -2089,6 +2091,7 @@ func importQLNonGUIPackages() {
 		"newChar":          charlang.NewChar,                // new a charlang script VM
 		"runChar":          charlang.RunChar,                // run a charlang script VM
 		"runCharCode":      charlang.RunCharCode,            // run a charlang script
+		"runXie":           xie.RunCode,                     // run a xielang script
 		"quickCompileChar": charlang.QuickCompile,           // compile a charlang script VM
 		"quickRunChar":     charlang.QuickRun,               // run a charlang script VM
 		"newCharAny":       charlang.NewAny,                 // create a interface{} pointer in charlang

@@ -23,6 +23,7 @@ require (
 	gopkg.in/check.v1 v1.0.0-20200902074654-038fdea0a05b // indirect
 	gopkg.in/ini.v1 v1.62.0 // indirect
 	gopkg.in/yaml.v2 v2.3.0 // indirect
+	gitee.com/topxeq/xie v0.0.0
 )
 
 // replace github.com/360EntSecGroup-Skylar/excelize v1.4.1 => github.com/360EntSecGroup-Skylar/excelize/v2 v2.3.2
@@ -37,6 +38,7 @@ replace github.com/topxeq/tk v1.0.1 => ../tk
 
 replace github.com/topxeq/qlang v0.0.0 => ../qlang
 
+replace gitee.com/topxeq/xie v0.0.0 => ../../../gitee.com/topxeq/xie
 // // replace github.com/topxeq/text v0.0.0 => ../text
 
 // replace github.com/topxeq/charlang v0.0.0 => ../charlang
