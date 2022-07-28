@@ -182,7 +182,7 @@ import (
 
 // Non GUI related
 
-var versionG = "v3.7.8"
+var versionG = "v3.8.1"
 
 // add tk.ToJSONX
 
@@ -703,6 +703,26 @@ func leSort(descentA bool) error {
 	} else {
 		sort.Sort(sort.StringSlice(leBufG))
 	}
+
+	return nil
+}
+
+func leConvertToUTF8(srcEncA ...string) error {
+	if leBufG == nil {
+		leClear()
+	}
+
+	if leBufG == nil {
+		return tk.Errf("buffer not initalized")
+	}
+
+	encT := ""
+
+	if len(srcEncA) > 0 {
+		encT = srcEncA[0]
+	}
+
+	leBufG = tk.SplitLines(tk.ConvertStringToUTF8(tk.JoinLines(leBufG), encT))
 
 	return nil
 }
@@ -1677,6 +1697,12 @@ func importQLNonGUIPackages() {
 		"runScript":       runScript,
 		"magic":           magic,
 
+		// debug relate 调试相关
+		"dump":   tk.Dump, // 输出一个或多个对象信息供参考
+		"dumpf":  tk.Dumpf,
+		"sdump":  tk.Sdump, // 生成一个或多个对象信息供参考
+		"sdumpf": tk.Sdumpf,
+
 		// output related 输出相关
 		"pv":        printValue,   // 输出一个变量的值，注意参数是字符串类型的变量名，例： pv("a")
 		"pr":        tk.Pr,        // 等同于其他语言中的print
@@ -1751,6 +1777,7 @@ func importQLNonGUIPackages() {
 		"regMatch":        tk.RegMatchX,          // 判断某字符串是否完整符合某表达式，例： if regMatch(mailT, `^([A-Za-z0-9_\-\.])+\@([A-Za-z0-9_\-\.])+\.([A-Za-z]{2,8})$`) {...}
 		"regContains":     tk.RegContainsX,       // 判断某字符串是否包含符合正则表达式的子串，例： if regContains("abccd", "b.c") {...}
 		"regContainsIn":   tk.RegContainsIn,      // 判断字符串中是否包含符合正则表达式的某几个字串
+		"regCount":        tk.RegCount,           // 判断某字符串包含几个符合正则表达式的子串
 		"regFind":         tk.RegFindFirstX,      // 根据正则表达式在字符串中寻找第一个匹配，函数定义： func regFind(strA, patternA string, groupA int) string
 		"regFindAll":      tk.RegFindAllX,        // 根据正则表达式在字符串中寻找所有匹配，函数定义： func regFindAll(strA, patternA string, groupA int) []string
 		"regFindIndex":    tk.RegFindFirstIndexX, // 根据正则表达式在字符串中第一个匹配的为止，函数定义： func regFindIndex(strA, patternA string) (int, int)
@@ -2055,30 +2082,31 @@ func importQLNonGUIPackages() {
 		"dbRecsToMapArrayMap": sqltk.RecordsToMapArrayMap, // 将多行行（第一行为标头字段行）的SQL语句查询结果（[][]string格式）变为类似dbQueryMapArray函数返回的结果
 
 		// line editor related 内置行文本编辑器有关
-		"leClear":       leClear,       // 清空行文本编辑器缓冲区，例：leClear()
-		"leLoadStr":     leLoadString,  // 行文本编辑器缓冲区载入指定字符串内容，例：leLoadStr("abc\nbbb\n结束")
-		"leSetAll":      leLoadString,  // 等同于leLoadString
-		"leSaveStr":     leSaveString,  // 取出行文本编辑器缓冲区中内容，例：s = leSaveStr()
-		"leGetAll":      leSaveString,  // 等同于leSaveStr
-		"leLoad":        leLoadFile,    // 从文件中载入文本到行文本编辑器缓冲区中，例：err = leLoad(`c:\test.txt`)
-		"leLoadFile":    leLoadFile,    // 等同于leLoad
-		"leSave":        leSaveFile,    // 将行文本编辑器缓冲区中内容保存到文件中，例：err = leSave(`c:\test.txt`)
-		"leSaveFile":    leSaveFile,    // 等同于leSave
-		"leLoadClip":    leLoadClip,    // 从剪贴板中载入文本到行文本编辑器缓冲区中，例：err = leLoadClip()
-		"leSaveClip":    leSaveClip,    // 将行文本编辑器缓冲区中内容保存到剪贴板中，例：err = leSaveClip()
-		"leInsert":      leInsertLine,  // 行文本编辑器缓冲区中的指定位置前插入指定内容，例：err = leInsert(3， "abc")
-		"leInsertLine":  leInsertLine,  // 行文本编辑器缓冲区中的指定位置前插入指定内容，例：err = leInsertLine(3， "abc")
-		"leAppend":      leAppendLine,  // 行文本编辑器缓冲区中的指定位置后插入指定内容，例：err = leAppend(3， "abc")
-		"leAppendLine":  leAppendLine,  // 行文本编辑器缓冲区中的指定位置后插入指定内容，例：err = leAppendLine(3， "abc")
-		"leSet":         leSetLine,     // 设定行文本编辑器缓冲区中的指定行为指定内容，例：err = leSet(3， "abc")
-		"leSetLine":     leSetLine,     // 设定行文本编辑器缓冲区中的指定行为指定内容，例：err = leSetLine(3， "abc")
-		"leSetLines":    leSetLines,    // 设定行文本编辑器缓冲区中指定范围的多行为指定内容，例：err = leSetLines(3, 5， "abc\nbbb")
-		"leRemove":      leRemoveLine,  // 删除行文本编辑器缓冲区中的指定行，例：err = leRemove(3)
-		"leRemoveLine":  leRemoveLine,  // 删除行文本编辑器缓冲区中的指定行，例：err = leRemoveLine(3)
-		"leRemoveLines": leRemoveLines, // 删除行文本编辑器缓冲区中指定范围的多行，例：err = leRemoveLines(1, 3)
-		"leViewAll":     leViewAll,     // 查看行文本编辑器缓冲区中的所有内容，例：allText = leViewAll()
-		"leView":        leViewLine,    // 查看行文本编辑器缓冲区中的指定行，例：lineText = leView(18)
-		"leSort":        leSort,        // 将行文本编辑器缓冲区中的行进行排序，唯一参数表示是否降序排序，例：errT = leSort(true)
+		"leClear":       leClear,         // 清空行文本编辑器缓冲区，例：leClear()
+		"leLoadStr":     leLoadString,    // 行文本编辑器缓冲区载入指定字符串内容，例：leLoadStr("abc\nbbb\n结束")
+		"leSetAll":      leLoadString,    // 等同于leLoadString
+		"leSaveStr":     leSaveString,    // 取出行文本编辑器缓冲区中内容，例：s = leSaveStr()
+		"leGetAll":      leSaveString,    // 等同于leSaveStr
+		"leLoad":        leLoadFile,      // 从文件中载入文本到行文本编辑器缓冲区中，例：err = leLoad(`c:\test.txt`)
+		"leLoadFile":    leLoadFile,      // 等同于leLoad
+		"leSave":        leSaveFile,      // 将行文本编辑器缓冲区中内容保存到文件中，例：err = leSave(`c:\test.txt`)
+		"leSaveFile":    leSaveFile,      // 等同于leSave
+		"leLoadClip":    leLoadClip,      // 从剪贴板中载入文本到行文本编辑器缓冲区中，例：err = leLoadClip()
+		"leSaveClip":    leSaveClip,      // 将行文本编辑器缓冲区中内容保存到剪贴板中，例：err = leSaveClip()
+		"leInsert":      leInsertLine,    // 行文本编辑器缓冲区中的指定位置前插入指定内容，例：err = leInsert(3， "abc")
+		"leInsertLine":  leInsertLine,    // 行文本编辑器缓冲区中的指定位置前插入指定内容，例：err = leInsertLine(3， "abc")
+		"leAppend":      leAppendLine,    // 行文本编辑器缓冲区中的指定位置后插入指定内容，例：err = leAppend(3， "abc")
+		"leAppendLine":  leAppendLine,    // 行文本编辑器缓冲区中的指定位置后插入指定内容，例：err = leAppendLine(3， "abc")
+		"leSet":         leSetLine,       // 设定行文本编辑器缓冲区中的指定行为指定内容，例：err = leSet(3， "abc")
+		"leSetLine":     leSetLine,       // 设定行文本编辑器缓冲区中的指定行为指定内容，例：err = leSetLine(3， "abc")
+		"leSetLines":    leSetLines,      // 设定行文本编辑器缓冲区中指定范围的多行为指定内容，例：err = leSetLines(3, 5， "abc\nbbb")
+		"leRemove":      leRemoveLine,    // 删除行文本编辑器缓冲区中的指定行，例：err = leRemove(3)
+		"leRemoveLine":  leRemoveLine,    // 删除行文本编辑器缓冲区中的指定行，例：err = leRemoveLine(3)
+		"leRemoveLines": leRemoveLines,   // 删除行文本编辑器缓冲区中指定范围的多行，例：err = leRemoveLines(1, 3)
+		"leViewAll":     leViewAll,       // 查看行文本编辑器缓冲区中的所有内容，例：allText = leViewAll()
+		"leView":        leViewLine,      // 查看行文本编辑器缓冲区中的指定行，例：lineText = leView(18)
+		"leSort":        leSort,          // 将行文本编辑器缓冲区中的行进行排序，唯一参数表示是否降序排序，例：errT = leSort(true)
+		"leEnc":         leConvertToUTF8, // 将行文本编辑器缓冲区中的文本转换为UTF-8编码，如果不指定原始编码则默认为GB18030编码
 
 		
 
@@ -2106,7 +2134,7 @@ func importQLNonGUIPackages() {
 		"renderMarkdown":   tk.RenderMarkdown,               // 将Markdown格式字符串渲染为HTML
 
 		"genToken":   tk.GenerateToken, // 生成令牌，用法：genToken("appCode", "userID", "userRole", "-secret=abc")
-		"checkToken": tk.CheckToken,    // 检查令牌，如果成功，返回类似的“appCode|userID|userRole|”字符串；失败返回TXERROR字符串
+		"checkToken": tk.CheckToken,    // 检查令牌，如果成功，返回类似“appCode|userID|userRole|”的字符串；失败返回TXERROR字符串
 
 		// global variables 全局变量
 		"timeFormatG":        tk.TimeFormat,        // 用于时间处理时的时间格式，值为"2006-01-02 15:04:05"

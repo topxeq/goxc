@@ -15,7 +15,7 @@ require (
 	github.com/mattn/go-sqlite3 v2.0.3+incompatible
 	github.com/spf13/afero v1.5.1 // indirect
 	github.com/stretchr/objx v0.3.0 // indirect
-	github.com/topxeq/charlang v0.0.0-20220308001517-79d2b54a8942
+	github.com/topxeq/charlang v0.0.0-20220722003130-49bba2664ad6
 	github.com/topxeq/imagetk v0.0.0-20210112052041-d3bf39e7174f // indirect
 	github.com/topxeq/qlang v0.0.0
 	github.com/topxeq/sqltk v0.0.0
