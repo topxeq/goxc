@@ -182,7 +182,7 @@ import (
 
 // Non GUI related
 
-var versionG = "v3.8.1"
+var versionG = "v3.8.3"
 
 // add tk.ToJSONX
 
@@ -562,6 +562,8 @@ func getNowDateStrCompact() string {
 }
 
 var leBufG []string
+var leLineEndG string = "\n"
+var leSilentG bool = false
 
 func leClear() {
 	leBufG = make([]string, 0, 100)
@@ -580,7 +582,7 @@ func leSaveString() string {
 		leClear()
 	}
 
-	return tk.JoinLines(leBufG)
+	return tk.JoinLines(leBufG, leLineEndG)
 }
 
 func leLoadFile(fileNameA string) error {
@@ -591,7 +593,32 @@ func leLoadFile(fileNameA string) error {
 	strT, errT := tk.LoadStringFromFileE(fileNameA)
 
 	if errT != nil {
+		if !leSilentG {
+			tk.Pl("failed load file to leBuf: %v", errT)
+		}
+
 		return errT
+	}
+
+	leBufG = tk.SplitLines(strT)
+	// leBufG, errT = tk.LoadStringListBuffered(fileNameA, false, false)
+
+	return nil
+}
+
+func leLoadUrl(urlA string) error {
+	if leBufG == nil {
+		leClear()
+	}
+
+	strT := tk.DownloadWebPageX(urlA)
+
+	if tk.IsErrStr(strT) {
+		if !leSilentG {
+			tk.Pl("failed load URL to leBuf: %v", tk.GetErrStr(strT))
+		}
+
+		return tk.ErrStrToErr(strT)
 	}
 
 	leBufG = tk.SplitLines(strT)
@@ -607,9 +634,12 @@ func leSaveFile(fileNameA string) error {
 
 	var errT error
 
-	textT := tk.JoinLines(leBufG)
+	textT := tk.JoinLines(leBufG, leLineEndG)
 
 	if tk.IsErrStr(textT) {
+		if !leSilentG {
+			tk.Pl("failed save leBuf to File: %v", tk.GetErrStr(textT))
+		}
 		return tk.Errf(tk.GetErrStr(textT))
 	}
 
@@ -626,6 +656,10 @@ func leLoadClip() error {
 	textT := tk.GetClipText()
 
 	if tk.IsErrStr(textT) {
+		if !leSilentG {
+			tk.Pl("failed load clipboard to leBuf: %v", tk.GetErrStr(textT))
+		}
+
 		return tk.Errf(tk.GetErrStr(textT))
 	}
 
@@ -639,9 +673,13 @@ func leSaveClip() error {
 		leClear()
 	}
 
-	textT := tk.JoinLines(leBufG)
+	textT := tk.JoinLines(leBufG, leLineEndG)
 
 	if tk.IsErrStr(textT) {
+		if !leSilentG {
+			tk.Pl("failed save leBuf to clipboard: %v", tk.GetErrStr(textT))
+		}
+
 		return tk.Errf(tk.GetErrStr(textT))
 	}
 
@@ -658,7 +696,7 @@ func leViewAll(argsA ...string) error {
 	}
 
 	if tk.IfSwitchExistsWhole(argsA, "-nl") {
-		textT := tk.JoinLines(leBufG)
+		textT := tk.JoinLines(leBufG, leLineEndG)
 
 		tk.Pln(textT)
 
@@ -681,6 +719,10 @@ func leViewLine(idxA int) error {
 	}
 
 	if idxA < 0 || idxA >= len(leBufG) {
+		if !leSilentG {
+			tk.Pl("line index out of range: %v", idxA)
+		}
+
 		return tk.Errf("line index out of range")
 	}
 
@@ -722,9 +764,44 @@ func leConvertToUTF8(srcEncA ...string) error {
 		encT = srcEncA[0]
 	}
 
-	leBufG = tk.SplitLines(tk.ConvertStringToUTF8(tk.JoinLines(leBufG), encT))
+	leBufG = tk.SplitLines(tk.ConvertStringToUTF8(tk.JoinLines(leBufG, leLineEndG), encT))
 
 	return nil
+}
+
+func leLineEnd(lineEndA ...string) string {
+	if leBufG == nil {
+		leClear()
+	}
+
+	if leBufG == nil {
+		return tk.ErrStrf("buffer not initalized")
+	}
+
+	if len(lineEndA) > 0 {
+		leLineEndG = lineEndA[0]
+	} else {
+		return leLineEndG
+	}
+
+	return ""
+}
+
+func leSilent(silentA ...bool) bool {
+	if leBufG == nil {
+		leClear()
+	}
+
+	if leBufG == nil {
+		return false
+	}
+
+	if len(silentA) > 0 {
+		leSilentG = silentA[0]
+		return leSilentG
+	}
+
+	return leSilentG
 }
 
 func leGetLine(idxA int) string {
@@ -737,6 +814,10 @@ func leGetLine(idxA int) string {
 	}
 
 	if idxA < 0 || idxA >= len(leBufG) {
+		if !leSilentG {
+			tk.Pl("line index out of range: %v", idxA)
+		}
+
 		return tk.ErrStrf("line index out of range")
 	}
 
@@ -753,6 +834,10 @@ func leSetLine(idxA int, strA string) error {
 	}
 
 	if idxA < 0 || idxA >= len(leBufG) {
+		if !leSilentG {
+			tk.Pl("line index out of range: %v", idxA)
+		}
+
 		return tk.Errf("line index out of range")
 	}
 
@@ -873,6 +958,10 @@ func leRemoveLine(idxA int) error {
 	}
 
 	if idxA < 0 || idxA >= len(leBufG) {
+		if !leSilentG {
+			tk.Pl("line index out of range: %v", idxA)
+		}
+
 		return tk.Errf("line index out of range")
 	}
 
@@ -896,14 +985,26 @@ func leRemoveLines(startA int, endA int) error {
 	}
 
 	if startA < 0 || startA >= len(leBufG) {
+		if !leSilentG {
+			tk.Pl("line index out of range: %v", startA)
+		}
+
 		return tk.Errf("start line index out of range")
 	}
 
 	if endA < 0 || endA >= len(leBufG) {
+		if !leSilentG {
+			tk.Pl("line index out of range: %v", endA)
+		}
+
 		return tk.Errf("end line index out of range")
 	}
 
 	if startA > endA {
+		if !leSilentG {
+			tk.Pl("start line index greater than end line index: %v", startA)
+		}
+
 		return tk.Errf("start line index greater than end line index")
 	}
 
@@ -2093,20 +2194,23 @@ func importQLNonGUIPackages() {
 		"leSaveFile":    leSaveFile,      // 等同于leSave
 		"leLoadClip":    leLoadClip,      // 从剪贴板中载入文本到行文本编辑器缓冲区中，例：err = leLoadClip()
 		"leSaveClip":    leSaveClip,      // 将行文本编辑器缓冲区中内容保存到剪贴板中，例：err = leSaveClip()
+		"leLoadUrl":     leLoadUrl,       // 从网址URL载入文本到行文本编辑器缓冲区中，例：err = leLoadUrl(`http://example.com/abc.txt`)
 		"leInsert":      leInsertLine,    // 行文本编辑器缓冲区中的指定位置前插入指定内容，例：err = leInsert(3， "abc")
-		"leInsertLine":  leInsertLine,    // 行文本编辑器缓冲区中的指定位置前插入指定内容，例：err = leInsertLine(3， "abc")
-		"leAppend":      leAppendLine,    // 行文本编辑器缓冲区中的指定位置后插入指定内容，例：err = leAppend(3， "abc")
-		"leAppendLine":  leAppendLine,    // 行文本编辑器缓冲区中的指定位置后插入指定内容，例：err = leAppendLine(3， "abc")
+		"leInsertLine":  leInsertLine,    // 等同于leInsert
+		"leAppend":      leAppendLine,    // 行文本编辑器缓冲区中的最后追加指定内容，例：err = leAppendLine("abc")
+		"leAppendLine":  leAppendLine,    // 等同于leAppend
 		"leSet":         leSetLine,       // 设定行文本编辑器缓冲区中的指定行为指定内容，例：err = leSet(3， "abc")
-		"leSetLine":     leSetLine,       // 设定行文本编辑器缓冲区中的指定行为指定内容，例：err = leSetLine(3， "abc")
+		"leSetLine":     leSetLine,       // 等同于leSet
 		"leSetLines":    leSetLines,      // 设定行文本编辑器缓冲区中指定范围的多行为指定内容，例：err = leSetLines(3, 5， "abc\nbbb")
 		"leRemove":      leRemoveLine,    // 删除行文本编辑器缓冲区中的指定行，例：err = leRemove(3)
-		"leRemoveLine":  leRemoveLine,    // 删除行文本编辑器缓冲区中的指定行，例：err = leRemoveLine(3)
+		"leRemoveLine":  leRemoveLine,    // 等同于leRemove
 		"leRemoveLines": leRemoveLines,   // 删除行文本编辑器缓冲区中指定范围的多行，例：err = leRemoveLines(1, 3)
 		"leViewAll":     leViewAll,       // 查看行文本编辑器缓冲区中的所有内容，例：allText = leViewAll()
 		"leView":        leViewLine,      // 查看行文本编辑器缓冲区中的指定行，例：lineText = leView(18)
 		"leSort":        leSort,          // 将行文本编辑器缓冲区中的行进行排序，唯一参数表示是否降序排序，例：errT = leSort(true)
 		"leEnc":         leConvertToUTF8, // 将行文本编辑器缓冲区中的文本转换为UTF-8编码，如果不指定原始编码则默认为GB18030编码
+		"leLineEnd":     leLineEnd,       // 读取或设置行文本编辑器缓冲区中行末字符（一般是\n或\r\n），不带参数是获取，带参数是设置
+		"leSilent":      leSilent,        // 读取或设置行文本编辑器的静默模式（布尔值），不带参数是获取，带参数是设置
 
 		
 
