@@ -182,7 +182,7 @@ import (
 
 // Non GUI related
 
-var versionG = "v3.8.3"
+var versionG = "v3.8.5"
 
 // add tk.ToJSONX
 
@@ -2024,7 +2024,7 @@ func importQLNonGUIPackages() {
 		"joinPath":          filepath.Join,                   // 连接文件路径，等同于Go语言标准库中的path/filepath.Join
 		"getFileSize":       tk.GetFileSizeCompact,           // 获取文件大小
 		"getFileInfo":       tk.GetFileInfo,                  // 获取文件信息，返回map[string]string
-		"getFileList":       tk.GetFileList,                  // 获取指定目录下的符合条件的所有文件，例：listT = getFileList(pathT, "-recursive", "-pattern=*", "-exclusive=*.txt", "-withDir", "-verbose"), -compact 参数将只给出Abs、Size、IsDir三项
+		"getFileList":       tk.GetFileList,                  // 获取指定目录下的符合条件的所有文件，例：listT = getFileList(pathT, "-recursive", "-pattern=*", "-exclusive=*.txt", "-withDir", "-verbose"), -compact 参数将只给出Abs、Size、IsDir三项, -dirOnly参数将只列出目录（不包含文件）
 		"getFiles":          tk.GetFileList,                  // 等同于getFileList
 		"createFile":        tk.CreateFile,                   // 等同于tk.CreateFile
 		"createTempFile":    tk.CreateTempFile,               // 等同于tk.CreateTempFile
@@ -2099,6 +2099,7 @@ func importQLNonGUIPackages() {
 		"writeRespHeader":      tk.WriteResponseHeader,           // 写http响应头的状态（200、404等），函数原型writeRespHeader(resA http.ResponseWriter, argsA ...interface{}) error，例：writeRespHeader(http.StatusOK)
 		"setRespHeader":        tk.SetResponseHeader,             // 设置http响应头中的内容，函数原型setRespHeader(resA http.ResponseWriter, keyA string, valueA string) error，例：setRespHeader(responseG, "Content-Type", "text/json; charset=utf-8")
 		"jsonRespToHtml":       tk.JSONResponseToHTML,            // 类似{"Status":"fail", "Value":"failed to connect DB"}的JSON响应转换为通用的简单的错误网页
+		"getMimeType":          tk.GetMimeTypeByExt,              // 根据文件扩展名获取MIME类型
 
 		"replaceHtmlByMap":      tk.ReplaceHtmlByMap,
 		"cleanHtmlPlaceholders": tk.CleanHtmlPlaceholders,
