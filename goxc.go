@@ -182,7 +182,7 @@ import (
 
 // Non GUI related
 
-var versionG = "v3.8.8"
+var versionG = "v3.8.9"
 
 // add tk.ToJSONX
 
@@ -310,13 +310,62 @@ func runScriptX(codeA string, argsA ...string) interface{} {
 
 }
 
-func runCode(codeA string, argsA ...string) interface{} {
+func runCode(codeA string, argsA ...interface{}) interface{} {
 	initQLVM()
 
 	vmT := qlang.New()
 
+	var argsT []string
+
+	for _, v := range argsA {
+		nv1, ok := v.(string)
+
+		if ok {
+			if argsT == nil {
+				argsT = make([]string, 0, 1)
+			}
+
+			argsT = append(argsT, nv1)
+			continue
+		}
+
+		nv2, ok := v.(map[string]interface{})
+
+		if ok {
+			for k, kv := range nv2 {
+				vmT.SetVar(k, kv)
+			}
+
+			continue
+		}
+
+		nv3, ok := v.(map[string]string)
+
+		if ok {
+			for k, kv := range nv3 {
+				vmT.SetVar(k, kv)
+			}
+
+			continue
+		}
+
+		nv4, ok := v.([]string)
+
+		if ok {
+			if argsT == nil {
+				argsT = make([]string, 0, len(nv4))
+			}
+
+			argsT = append(argsT, nv4...)
+
+			continue
+		}
+	}
+
 	// if argsA != nil && len(argsA) > 0 {
-	vmT.SetVar("argsG", argsA)
+	if argsT != nil {
+		vmT.SetVar("argsG", argsT)
+	}
 	// } else {
 	// 	vmT.SetVar("argsG", os.Args)
 	// }
@@ -1025,7 +1074,7 @@ func magic(numberA int, argsA ...string) interface{} {
 		return tk.ErrorStringToError(fcT)
 	}
 
-	return runCode(fcT, argsA...)
+	return runCode(fcT, argsA)
 
 }
 
@@ -1794,7 +1843,7 @@ func importQLNonGUIPackages() {
 		"deepClone":       tk.DeepClone,
 		"deepCopy":        tk.DeepCopyFromTo,
 		"run":             runFile,
-		"runCode":         runCode,
+		"runCode":         runCode, // 运行一段Gox代码（新开一个虚拟机），传入参数除第一个是代码字符串外，后面可以跟多个参数，如果是字符串参数会加入新虚拟机的argsG变量中，如果是字符串数组也会都加入argsG中，如果是映射，则会按照键值加入全局变量中，例如：runCode("pln", {"arg1": 1.2, "arg2": "true"})
 		"runScript":       runScript,
 		"magic":           magic,
 
@@ -2837,13 +2886,15 @@ func runArgs(argsA ...string) interface{} {
 		if (!tk.EndsWith(scriptT, ".gox")) && (!tk.EndsWith(scriptT, ".ql")) {
 			scriptT += ".gox"
 		}
+
+		scriptPathG = "https://gitee.com/topxeq/gox/raw/master/scripts/" + scriptT
+
 		fcT = tk.DownloadPageUTF8("https://gitee.com/topxeq/gox/raw/master/scripts/"+scriptT, nil, "", 30)
 
-		scriptPathG = ""
 	} else if ifRemoteT {
+		scriptPathG = scriptT
 		fcT = tk.DownloadPageUTF8(scriptT, nil, "", 30)
 
-		scriptPathG = ""
 	} else if ifClipT {
 		fcT = tk.GetClipText()
 
@@ -2867,6 +2918,8 @@ func runArgs(argsA ...string) interface{} {
 			cfgStrT := tk.Trim(tk.LoadStringFromFile(cfgPathT))
 
 			if !tk.IsErrorString(cfgStrT) {
+				scriptPathG = cfgStrT + scriptT
+
 				fcT = tk.DownloadPageUTF8(cfgStrT+scriptT, nil, "", 30)
 
 				gotT = true
@@ -2875,10 +2928,10 @@ func runArgs(argsA ...string) interface{} {
 		}
 
 		if !gotT {
+			scriptPathG = scriptT
 			fcT = tk.DownloadPageUTF8(scriptT, nil, "", 30)
 		}
 
-		scriptPathG = ""
 	} else if sshT != "" {
 		if (!tk.EndsWith(scriptT, ".gox")) && (!tk.EndsWith(scriptT, ".ql")) {
 			scriptT += ".gox"
