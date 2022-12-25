@@ -3,7 +3,6 @@ module github.com/topxeq/goxc
 go 1.14
 
 require (
-	gitee.com/topxeq/xie v0.0.0
 	github.com/ajstarks/svgo v0.0.0-20200725142600-7a3c8b57fecb // indirect
 	github.com/beevik/etree v1.1.1-0.20200718192613-4a2f8b9d084c // indirect
 	github.com/denisenkom/go-mssqldb v0.10.0
@@ -13,13 +12,15 @@ require (
 	github.com/jung-kurt/gofpdf v1.16.2 // indirect
 	github.com/kr/text v0.2.0 // indirect
 	github.com/mattn/go-sqlite3 v2.0.3+incompatible
+	github.com/sijms/go-ora/v2 v2.5.20
 	github.com/spf13/afero v1.5.1 // indirect
 	github.com/stretchr/objx v0.3.0 // indirect
 	github.com/topxeq/charlang v0.0.0-20220722003130-49bba2664ad6
 	github.com/topxeq/imagetk v0.0.0-20210112052041-d3bf39e7174f // indirect
 	github.com/topxeq/qlang v0.0.0
-	github.com/topxeq/sqltk v0.0.0
+	github.com/topxeq/sqltk v0.0.0-20221225082143-d6266faebd41
 	github.com/topxeq/tk v1.0.1
+	github.com/topxeq/xie v0.0.0
 	gonum.org/v1/gonum v0.8.1 // indirect
 	gopkg.in/check.v1 v1.0.0-20200902074654-038fdea0a05b // indirect
 	gopkg.in/ini.v1 v1.62.0 // indirect
@@ -34,11 +35,11 @@ replace github.com/topxeq/tk v1.0.1 => ../tk
 
 // replace github.com/topxeq/xmlx v0.2.0 => ../xmlx
 
-replace github.com/topxeq/sqltk v0.0.0 => ../sqltk
+// replace github.com/topxeq/sqltk v0.0.0 => ../sqltk
 
 replace github.com/topxeq/qlang v0.0.0 => ../qlang
 
-replace gitee.com/topxeq/xie v0.0.0 => ../../../gitee.com/topxeq/xie
+replace github.com/topxeq/xie v0.0.0 => ../xie
 
 // // replace github.com/topxeq/text v0.0.0 => ../text
 
