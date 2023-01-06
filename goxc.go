@@ -183,7 +183,7 @@ import (
 
 // Non GUI related
 
-var versionG = "v3.9.3"
+var versionG = "v3.9.5"
 
 // add tk.ToJSONX
 
@@ -1257,6 +1257,54 @@ func NewFuncInterfaceInterfaceErrorB(funcA interface{}) func(interface{}) (inter
 	return f
 }
 
+func NewFuncInterfaceInterface(funcA interface{}) func(interface{}) interface{} {
+	funcT := (funcA).(*execq.Function)
+	f := func(s interface{}) interface{} {
+		r := funcT.Call(execq.NewStack(), s).([]interface{})
+
+		if len(r) < 1 {
+			return nil
+		}
+
+		return r[0].(interface{})
+	}
+
+	return f
+}
+
+func NewFuncInterfacesInterface(funcA interface{}) func(...interface{}) interface{} {
+	funcT := (funcA).(*execq.Function)
+	f := func(s ...interface{}) interface{} {
+		// tk.Pl("x2: %v", s)
+		r0 := funcT.Call(execq.NewStack(), s...)
+
+		r, ok := r0.([]interface{})
+
+		if ok {
+			if r == nil {
+				return nil
+			}
+
+			if len(r) < 1 {
+				return nil
+			}
+
+			rs, ok := r[0].(interface{})
+			if ok {
+				return rs
+			}
+
+			return nil
+
+		} else {
+			return r0
+		}
+
+	}
+
+	return f
+}
+
 func NewFuncInterfaceInterfaceError(funcA *interface{}) *(func(interface{}) (interface{}, error)) {
 	funcT := (*funcA).(*execq.Function)
 	f := func(s interface{}) (interface{}, error) {
@@ -2309,7 +2357,9 @@ func importQLNonGUIPackages() {
 
 		"sortX":            tk.SortX,                        // 排序各种数据，用法：sort([{"f1": 1}, {"f1": 2}], "-key=f1", "-desc")
 		"newFunc":          NewFuncB,                        // 将Gox语言中的定义的函数转换为Go语言中类似 func f() 的形式
+		"newFuncII":        NewFuncInterfaceInterface,       // 将Gox语言中的定义的函数转换为Go语言中类似 func f(a interface{}) interface{} 的形式
 		"newFuncIIE":       NewFuncInterfaceInterfaceErrorB, // 将Gox语言中的定义的函数转换为Go语言中类似 func f(a interface{}) (interface{}, error) 的形式
+		"newFuncIsI":       NewFuncInterfacesInterface,      // 将Gox语言中的定义的函数转换为Go语言中类似 func f(a ...interface{}) interface{} 的形式
 		"newFuncSSE":       NewFuncStringStringErrorB,       // 将Gox语言中的定义的函数转换为Go语言中类似 func f(a string) (string, error) 的形式
 		"newFuncSS":        NewFuncStringStringB,            // 将Gox语言中的定义的函数转换为Go语言中类似 func f(a string) string 的形式
 		"newCharFunc":      newCharFunc,                     // 将Gox语言中的定义的函数转换为Charlang语言中类似 func f() 的形式
@@ -2354,6 +2404,8 @@ func importQLNonGUIPackages() {
 		"NewFuncError":                    NewFuncError,
 		"NewFuncInterface":                NewFuncInterface,
 		"NewFuncInterfaceError":           NewFuncInterfaceError,
+		"NewFuncInterfaceInterface":       NewFuncInterfaceInterface,
+		"NewFuncInterfacesInterface":      NewFuncInterfacesInterface,
 		"NewFuncInterfaceInterfaceError":  NewFuncInterfaceInterfaceError,
 		"NewFuncInterfaceInterfaceErrorB": NewFuncInterfaceInterfaceErrorB,
 		"NewFuncIntString":                NewFuncIntString,
