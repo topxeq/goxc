@@ -183,7 +183,7 @@ import (
 
 // Non GUI related
 
-var versionG = "v3.9.5"
+var versionG = "v3.9.6"
 
 // add tk.ToJSONX
 
@@ -2351,6 +2351,14 @@ func importQLNonGUIPackages() {
 		"leSilent":      leSilent,        // 读取或设置行文本编辑器的静默模式（布尔值），不带参数是获取，带参数是设置
 
 		
+
+		// compress/uncompress related 压缩解压缩相关函数
+
+		"compress":   tk.Compress,
+		"uncompress": tk.Uncompress,
+
+		"compressText":   tk.CompressText,
+		"uncompressText": tk.UncompressText,
 
 		// misc related 杂项相关函数
 		"dealRef": tk.DealRef,
