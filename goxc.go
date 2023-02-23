@@ -162,6 +162,8 @@ import (
 
 	qlgithub_domodwyer_mailyak "github.com/topxeq/qlang/lib/github.com/domodwyer/mailyak"
 
+	qlgithub_topxeq_docxrepl "github.com/topxeq/qlang/lib/github.com/topxeq/docxrepl"
+
 	
 
 	// full version related start
@@ -183,7 +185,7 @@ import (
 
 // Non GUI related
 
-var versionG = "v3.9.6"
+var versionG = "v3.9.7"
 
 // add tk.ToJSONX
 
@@ -2553,6 +2555,8 @@ func importQLNonGUIPackages() {
 
 	qlang.Import("github_domodwyer_mailyak", qlgithub_domodwyer_mailyak.Exports)
 	qlang.Import("mailyak", qlgithub_domodwyer_mailyak.Exports)
+
+	qlang.Import("github_topxeq_docxrepl", qlgithub_topxeq_docxrepl.Exports)
 
 	
 
