@@ -2365,6 +2365,14 @@ func importQLNonGUIPackages() {
 		// misc related 杂项相关函数
 		"dealRef": tk.DealRef,
 
+		"lockN":    tk.LockN, // lock a global lock, 0 <= N < 10
+		"unlockN":  tk.UnlockN,
+		"tryLockN": tk.TryLockN,
+
+		"readLockN":    tk.RLockN, // read lock a global lock, 0 <= N < 10
+		"readUnlockN":  tk.RUnlockN,
+		"tryReadLockN": tk.TryRLockN,
+
 		"sortX":            tk.SortX,                        // 排序各种数据，用法：sort([{"f1": 1}, {"f1": 2}], "-key=f1", "-desc")
 		"newFunc":          NewFuncB,                        // 将Gox语言中的定义的函数转换为Go语言中类似 func f() 的形式
 		"newFuncII":        NewFuncInterfaceInterface,       // 将Gox语言中的定义的函数转换为Go语言中类似 func f(a interface{}) interface{} 的形式
@@ -2784,6 +2792,7 @@ func runArgs(argsA ...string) interface{} {
 		}
 	}
 
+	ifXieT := tk.IfSwitchExistsWhole(argsT, "-xie")
 	ifClipT := tk.IfSwitchExistsWhole(argsT, "-clip")
 	ifEmbedT := (codeTextG != "") && (!tk.IfSwitchExistsWhole(argsT, "-noembed"))
 
@@ -2978,7 +2987,7 @@ func runArgs(argsA ...string) interface{} {
 
 		scriptPathG = ""
 	} else if ifExampleT {
-		if (!tk.EndsWith(scriptT, ".gox")) && (!tk.EndsWith(scriptT, ".ql")) {
+		if (!tk.EndsWith(scriptT, ".gox")) && (!tk.EndsWith(scriptT, ".xie")) {
 			scriptT += ".gox"
 		}
 
@@ -2999,7 +3008,7 @@ func runArgs(argsA ...string) interface{} {
 
 		scriptPathG = ""
 	} else if ifCloudT {
-		if (!tk.EndsWith(scriptT, ".gox")) && (!tk.EndsWith(scriptT, ".ql")) {
+		if (!tk.EndsWith(scriptT, ".gox")) && (!tk.EndsWith(scriptT, ".xie")) {
 			scriptT += ".gox"
 		}
 
@@ -3028,7 +3037,7 @@ func runArgs(argsA ...string) interface{} {
 		}
 
 	} else if sshT != "" {
-		if (!tk.EndsWith(scriptT, ".gox")) && (!tk.EndsWith(scriptT, ".ql")) {
+		if (!tk.EndsWith(scriptT, ".gox")) && (!tk.EndsWith(scriptT, ".xie")) {
 			scriptT += ".gox"
 		}
 
@@ -3041,7 +3050,7 @@ func runArgs(argsA ...string) interface{} {
 
 		scriptPathG = ""
 	} else if ifGoPathT {
-		if (!tk.EndsWith(scriptT, ".gox")) && (!tk.EndsWith(scriptT, ".ql")) {
+		if (!tk.EndsWith(scriptT, ".gox")) && (!tk.EndsWith(scriptT, ".xie")) {
 			scriptT += ".gox"
 		}
 
@@ -3049,7 +3058,7 @@ func runArgs(argsA ...string) interface{} {
 
 		fcT = tk.LoadStringFromFile(scriptPathG)
 	} else if ifAppPathT {
-		if (!tk.EndsWith(scriptT, ".gox")) && (!tk.EndsWith(scriptT, ".ql")) {
+		if (!tk.EndsWith(scriptT, ".gox")) && (!tk.EndsWith(scriptT, ".xie")) {
 			scriptT += ".gox"
 		}
 
@@ -3057,7 +3066,7 @@ func runArgs(argsA ...string) interface{} {
 
 		fcT = tk.LoadStringFromFile(scriptPathG)
 	} else if ifLocalT {
-		if (!tk.EndsWith(scriptT, ".gox")) && (!tk.EndsWith(scriptT, ".ql")) {
+		if (!tk.EndsWith(scriptT, ".gox")) && (!tk.EndsWith(scriptT, ".xie")) {
 			scriptT += ".gox"
 		}
 
@@ -3236,6 +3245,15 @@ func runArgs(argsA ...string) interface{} {
 				}
 			}
 
+		}
+
+		return nil
+	}
+
+	if ifXieT {
+		rs := xie.RunCode(fcT, nil, map[string]interface{}{"scriptPathG": scriptPathG}, argsT...) // "guiG": guiHandlerG,
+		if !tk.IsUndefined(rs) {
+			tk.Pl("%v", rs)
 		}
 
 		return nil
@@ -4100,7 +4118,7 @@ data, _ := w.Call("getScreenWH") //, sciter.NewValue(10), sciter.NewValue(20))
 fileNameT := tk.GetParameterByIndexWithDefaultValue(argsG, 0, "")
 
 if ifSwitchExists(argsG, "-gopath") {
-	if (!strEndsWith(fileNameT, ".gox")) && (!strEndsWith(fileNameT, ".ql")) {
+	if (!strEndsWith(fileNameT, ".gox")) && (!strEndsWith(fileNameT, ".xie")) {
 		fileNameT += ".gox"
 	}
 
@@ -4108,7 +4126,7 @@ if ifSwitchExists(argsG, "-gopath") {
 }
 
 if ifSwitchExists(argsG, "-local") {
-	if (!strEndsWith(fileNameT, ".gox")) && (!strEndsWith(fileNameT, ".ql")) {
+	if (!strEndsWith(fileNameT, ".gox")) && (!strEndsWith(fileNameT, ".xie")) {
 		fileNameT += ".gox"
 	}
 
