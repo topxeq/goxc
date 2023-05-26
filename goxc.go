@@ -185,7 +185,7 @@ import (
 
 // Non GUI related
 
-var versionG = "v5.0.0"
+var versionG = "v5.0.1"
 
 // add tk.ToJSONX
 
@@ -1990,6 +1990,9 @@ func importQLNonGUIPackages() {
 		"adjustFloat":  tk.AdjustFloat,          // 去除浮点数的计算误差，用法：adjustFloat(4.000000002, 2)，第二个参数表示保留几位小数点后数字
 		"getRandomInt": tk.GetRandomIntLessThan, // 获取[0-maxA)之间的随机整数
 		"getRandom":    tk.GetRandomFloat,       // 获取[0.0-1.0)之间的随机浮点数
+		"ceil":         tk.Ceil,                 // 向上取整
+		"floor":        tk.Floor,                // 向下取整
+		"round":        tk.Round,                // 四舍五入
 
 		// string related 字符串相关
 		"trim":                 trim,               // 取出字符串前后的空白字符，可选的第二个参数可以是待去掉的字符列表，等同于tk.Trim, 但支持Undefind（转空字符串）和nil
@@ -2231,6 +2234,7 @@ func importQLNonGUIPackages() {
 		"parseCommand":   tk.ParseCommandLine,                    // 等同于tk.ParseCommandLine
 
 		// network related 网络相关
+		"isHttps":      tk.IsHttps,      // 判断一个*http.Request是否是https连接
 		"newSSHClient": tk.NewSSHClient, // 新建一个SSH连接，以便执行各种SSH操作，例：
 		// clientT, errT = newSSHClient(hostName, port, userName, password)
 		// defer clientT.Close() // 别忘了用完关闭网络连接
