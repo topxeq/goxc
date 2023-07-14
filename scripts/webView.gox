@@ -1,0 +1,117 @@
+// 设置github.com/webview/webview包的简称
+webView = github_webview_webview
+
+// 创建一个webView，参数是是否允许debug
+w := webView.New(true)
+
+// 确认退出时关闭webView
+defer w.Destroy()
+
+// 设置webView窗口标题
+w.SetTitle("Hello")
+
+// 设置窗口大小
+// hint的取值：HintNone 设定的宽度和高度（前两个参数）是窗口默认大小，
+// HintFixed 窗口大小不能变更
+// HintMin 设定的宽度和高度（前两个参数）是窗口最小大小
+// HintMax 设定的宽度和高度（前两个参数）是窗口最大大小
+w.SetSize(400, 300, webView.HintNone)
+
+// 定义一个准备在JavaScript中调用的函数
+func goPr(valueA) {
+	pl("%v", valueA)
+	return "", nil
+}
+
+goPrP = newFuncIIE(goPr)
+
+w.Bind("pr", goPrP)
+
+func goHex(valueA) {
+	if !isValid(valueA, "string") {
+		return "", errf("无效参数，应为一个字符串，收到的类型是%T", valueA)
+	}
+
+	rs = hexEncode(valueA)
+
+	return rs, nil
+}
+
+goHexP = newFuncIIE(goHex)
+
+w.Bind("hex", goHexP)
+
+// func goAdd(valueA) {
+// 	rs = valueA+"a"
+
+// 	return rs, errf("abc")
+// }
+
+// goAddP = newFuncSSE(goAdd)
+
+// w.Bind("add", goAddP)
+
+func myQuit() {
+	w.Terminate()
+}
+
+myQuitP = newFunc(myQuit)
+w.Bind("quit", myQuitP)
+
+htmlT = `<!DOCTYPE html>
+		<html>
+			<head>
+				<meta charset="gb2312"> 
+			</head>
+			<body>
+				<div>hello</div>
+				<div id="mainDiv">
+				</div>
+
+				<button onclick="javascript:test1();">测试1</button>
+				<button onclick="javascript:test2();">Test2</button>
+				<button onclick="javascript:quit();">Quit</button>
+			</body>
+			<script>
+				function test1() {
+					hex('123abc').then(function(res) {
+						document.getElementById('mainDiv').innerHTML = res;
+						pr("正确")
+					}, function(err) {
+						document.getElementById('mainDiv').innerHTML = '<span style="color: red;">'+err+'</span>';
+						pr("错误："+err)
+					});
+				}
+
+				function test2() {
+					hex(123).then(function(res) {
+						document.getElementById('mainDiv').innerHTML = res;
+						pr("正确")
+					}, function(err) {
+						document.getElementById('mainDiv').innerHTML = '<span style="color: red;">'+err+'</span>';
+						pr("错误："+err)
+					});
+				}
+
+			</script>
+		</html>
+		`
+
+// htmlT = strReplace(htmlT, "+", "%2B")
+
+// htmlT = net_url.PathEscape(htmlT)
+
+plv(htmlT)
+
+// w.Navigate(`data:text/html;charset=utf-8,` + htmlT)
+// w.Navigate(`data:text/html;base64,` + base64Encode([]byte(htmlT)))
+
+// w.Navigate(`data:text/text,` + htmlT)
+// w.Navigate(`data:text/html,` + net_url.QueryEscape(htmlT))
+// w.Navigate(`data:text/html,` + htmlT)
+w.Navigate(`data:text/html;charset=UTF-8,` + htmlT)
+
+// w.Navigate("file:///D:/tmpx/test.html")
+// w.Navigate("http://shupei.fltrp.com")
+
+w.Run()

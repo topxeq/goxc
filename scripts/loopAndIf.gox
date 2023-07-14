@@ -1,0 +1,74 @@
+i = 0
+
+for {
+	println(i)
+	i++
+	if i > 1 {
+		break
+	}
+}
+
+println("")
+
+for i, v = range [0, 1] {
+	println(i, v)
+}
+
+println("")
+
+for key, value = range {"a": "b"} {
+	println(key, value)
+}
+
+println("")
+
+m = {"a": "b", "c": 3}
+
+for k, v = range m {
+	println(k, v)
+}
+
+println("")
+
+i = 0
+for i < 2 {
+	println(i)
+	i++
+}
+
+println("")
+
+for i = 0; i < 2; i++ {
+	println(i)
+}
+
+println("")
+
+
+for i = 0; i < 10; i++ {
+	println(i)
+	if i < 1 {
+		continue
+	}
+
+	break
+}
+
+println("")
+
+aryT = [3, "abc", true, 2.8]
+
+for i, v = range aryT {
+	printf("v: %v ", v)
+	switch v {
+	case typeOf(v) == "bool":
+		println("is bool:", v)
+	case typeOf(v) == "string":
+		println("is string")
+	case 2.8: // fallthrough is not supported now
+	case 3:
+		println("is number")
+	default:
+		println("unknown:", v)
+	}
+}

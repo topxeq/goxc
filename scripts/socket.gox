@@ -1,0 +1,31 @@
+func connect(uri) {
+	proxy = os.Getenv("http_proxy")
+
+	if proxy != "" {
+		u, e = net_url.Parse(proxy)
+	
+		if e != nil {
+			return nil, e
+		}
+		
+		return net.Dial("tcp", u.Host)
+	}
+
+	return net.Dial("tcp", uri)
+}
+
+c, e = connect("www.baidu.com:80")
+
+if e != nil {
+	tk.CheckError(e)
+}
+
+c.Write([]byte("GET http://www.baidu.com/ HTTP/1.0\r\n\r\n"))
+
+b, e = io_ioutil.ReadAll(c)
+
+if e != nil {
+	tk.CheckError(e)
+}
+
+printf("%s\n", b)

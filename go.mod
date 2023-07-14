@@ -10,11 +10,12 @@ require (
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
 	github.com/kr/text v0.2.0 // indirect
 	github.com/mattn/go-sqlite3 v2.0.3+incompatible
+	github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e // indirect
 	github.com/sijms/go-ora/v2 v2.5.25
 	github.com/spf13/afero v1.5.1 // indirect
 	github.com/topxeq/charlang v0.0.0-20220722003130-49bba2664ad6
 	github.com/topxeq/qlang v0.0.0
-	github.com/topxeq/sqltk v0.0.0-20230223005953-f9932d23950c
+	github.com/topxeq/sqltk v0.0.0
 	github.com/topxeq/tk v1.0.1
 	github.com/topxeq/xie v0.0.0
 	gopkg.in/check.v1 v1.0.0-20200902074654-038fdea0a05b // indirect
@@ -29,7 +30,7 @@ replace github.com/topxeq/tk v1.0.1 => ../tk
 
 // replace github.com/topxeq/xmlx v0.2.0 => ../xmlx
 
-// replace github.com/topxeq/sqltk v0.0.0 => ../sqltk
+replace github.com/topxeq/sqltk v0.0.0 => ../sqltk
 
 replace github.com/topxeq/qlang v0.0.0 => ../qlang
 

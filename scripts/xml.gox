@@ -1,0 +1,184 @@
+etree = github_beevik_etree
+
+reshapeXMLX = fn(xmlA) {
+	treeT = etree.NewDocument()
+
+	if treeT == nil {
+		return tk.GenerateErrorStringF("create XML tree failed")
+	}
+
+	errT = treeT.ReadFromString(xmlA)
+
+	if errT != nil {
+		return tk.GenerateErrorStringF("invalid XML: %v", errT)
+	}
+
+	treeT.Indent(2)
+
+	outputT, errT = treeT.WriteToString()
+
+	if errT != nil {
+		return tk.GenerateErrorStringF("failed to reshape XML: %v", errT)
+	}
+
+	return outputT
+
+}
+
+flattenXML = fn(xmlA, nodeA) {
+	treeT = etree.NewDocument()
+
+	if treeT == nil {
+		return tk.GenerateErrorStringF("create XML tree failed")
+	}
+
+	errT = treeT.ReadFromString(xmlA)
+
+	if errT != nil {
+		return tk.GenerateErrorStringF("invalid XML: %v", errT)
+	}
+
+	rootNodeT = treeT.FindElement("//" + nodeA)
+
+	if rootNodeT == nil {
+		return tk.GenerateErrorStringF("node not found: %v", nodeA)
+	}
+
+	nodesT = rootNodeT.ChildElements()
+
+	bufT = new(strings.Builder)
+
+	for i, v = range nodesT {
+		if i > 0 {
+			bufT.WriteString("\n")
+		}
+
+		bufT.WriteString(tk.Spr("%v: %v", v.Tag, v.Text()))
+	}
+
+	return bufT.String()
+
+}
+
+getMSSFromXML = fn(xmlA, nodeA) {
+	treeT = etree.NewDocument()
+
+	if treeT == nil {
+		return nil, tk.Errf("create XML tree failed")
+	}
+
+	errT = treeT.ReadFromString(xmlA)
+
+	if errT != nil {
+		return nil, tk.Errf("invalid XML: %v", errT)
+	}
+
+	rootNodeT = treeT.FindElement("//" + nodeA)
+
+	if rootNodeT == nil {
+		return nil, tk.Errf("node not found: %v", nodeA)
+	}
+
+	nodesT = rootNodeT.ChildElements()
+
+	mapT = make(map[string]string, len(nodesT))
+	for _, jv = range nodesT {
+		mapT[jv.Tag] = jv.Text()
+	}
+
+	return mapT, nil
+}
+
+getMSSArrayFromXML = fn(xmlA, nodeA) {
+	treeT = etree.NewDocument()
+
+	if treeT == nil {
+		return nil, tk.Errf("create XML tree failed")
+	}
+
+	errT = treeT.ReadFromString(xmlA)
+
+	if errT != nil {
+		return nil, tk.Errf("invalid XML: %v", errT)
+	}
+
+	rootNodeT = treeT.FindElement("//" + nodeA)
+
+	if rootNodeT == nil {
+		return nil, tk.Errf("node not found: %v", nodeA)
+	}
+
+	nodesT = rootNodeT.ChildElements()
+
+	aryT = make([]map[string]string, 0)
+
+	for _, v = range nodesT {
+		internalNodesT = v.ChildElements()
+
+		mapT = make(map[string]string, len(internalNodesT))
+		for _, jv = range internalNodesT {
+			mapT[jv.Tag] = jv.Text()
+		}
+
+		aryT = append(aryT, mapT)
+	}
+
+	return aryT, nil
+}
+
+
+xmlT = `<Envelope xmlns="http://schemas.xmlsoap.org/soap/envelope/">
+<Body>
+	<ZvendorNameFuzquery xmlns="urn:sap-com:document:sap:soap:functions:mc-style">
+		<Iname xmlns="">北京大学</Iname>
+		<Iresv1 xmlns="">简称：北大</Iresv1>
+		<Iresv2 xmlns=""></Iresv2>
+		<Tname xmlns="">
+		</Tname>
+	</ZvendorNameFuzquery>
+</Body>
+</Envelope>`
+
+resultT = reshapeXMLX(xmlT)
+
+println(resultT)
+
+println("\n-----\n")
+
+resultT = flattenXML(xmlT, "ZvendorNameFuzquery")
+
+println(resultT)
+
+println("\n-----\n")
+
+resultT, errT = getMSSFromXML(xmlT, "ZvendorNameFuzquery")
+
+println(resultT, errT)
+
+println("\n-----\n")
+
+xmlT = `<Envelope xmlns="http://schemas.xmlsoap.org/soap/envelope/">
+<Body>
+	<ZvendorNameFuzquery xmlns="urn:sap-com:document:sap:soap:functions:mc-style">
+		<item>
+			<Iname xmlns="">北京大学</Iname>
+			<Iresv1 xmlns="">简称：北大</Iresv1>
+			<Iresv2 xmlns=""></Iresv2>
+			<Tname xmlns="">
+			</Tname>
+		</item>
+		<item>
+			<Iname xmlns="">清华大学</Iname>
+			<Iresv1 xmlns=""></Iresv1>
+			<Iresv2 xmlns="">地址</Iresv2>
+			<Tname xmlns="">
+			</Tname>
+		</item>
+	</ZvendorNameFuzquery>
+</Body>
+</Envelope>`
+
+resultT = getMSSArrayFromXML(xmlT, "ZvendorNameFuzquery")
+
+println(resultT)
+

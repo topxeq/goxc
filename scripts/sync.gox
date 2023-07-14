@@ -1,0 +1,38 @@
+valueG = 0
+groupG = new(sync.WaitGroup)
+
+mutexG = new(sync.Mutex)
+
+addRoutine = fn(countA) {
+
+	for i = 0; i < countA; i++ {
+		mutexG.Lock()
+		valueG = valueG + 2
+		mutexG.Unlock()
+	}
+
+	groupG.Done()
+
+}
+
+minusRoutine = fn(countA) {
+
+	for i = 0; i < countA; i++ {
+		mutexG.Lock()
+		valueG = valueG - 2
+		mutexG.Unlock()
+	}
+
+	groupG.Done()
+}
+
+times = 5000
+
+groupG.Add(2)
+
+go addRoutine(times)
+go minusRoutine(times - 2)
+
+groupG.Wait()
+
+printfln("valueG: %v", valueG)

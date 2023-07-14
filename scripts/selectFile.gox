@@ -1,0 +1,20 @@
+// 使用涉及图形界面的程序，都要先调用initGUI函数来初始化
+initGUI()
+
+// selectFileGUI函数会弹出对话框以供选择文件
+// 参数类似命令行的开关参数，均为可选且无顺序之分
+// 参数title为对话框提示文字
+// filterName为文件类型的提示文字
+// filter为文件类型匹配模式
+// start为起始目录（文件夹）
+rs = selectFileGUI("-title=请选择文件……", "-filterName=所有文件", "-filter=*", "-start=.")
+
+// 如果发生错误则提示后退出
+if isErrStr(rs) {
+	pl("发生错误：%v", getErrStr(rs))
+	exit()
+}
+
+// getFileSize函数用于获取文件大小
+pl("您选择的文件是%v，大小为%v个字节", rs, getFileSize(rs))
+

@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	// "context"
+	"net/http"
 
 	"io"
 	"math/rand"
@@ -164,8 +165,6 @@ import (
 
 	qlgithub_topxeq_docxrepl "github.com/topxeq/qlang/lib/github.com/topxeq/docxrepl"
 
-	
-
 	// full version related start
 	_ "github.com/denisenkom/go-mssqldb"
 	_ "github.com/godror/godror"
@@ -176,8 +175,6 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 	_ "github.com/mattn/go-sqlite3"
 
-	
-
 	"github.com/topxeq/xie"
 
 	"github.com/topxeq/tk"
@@ -185,19 +182,23 @@ import (
 
 // Non GUI related
 
-var versionG = "v5.0.1"
+var VersionG = "v6.1.0"
 
 // add tk.ToJSONX
 
-var verboseG = false
+var VerboseG = false
 
 var variableG = make(map[string]interface{})
 
-var codeTextG = ""
+var CodeTextG = ""
 
-var qlVMG *qlang.Qlang = nil
+var QlVMG *qlang.Qlang = nil
 
 var varMutexG sync.Mutex
+
+var QLNonGUIPackagesInitFlag bool = false
+
+var ServerModeG = false
 
 func exit(argsA ...int) {
 	defer func() {
@@ -215,10 +216,267 @@ func exit(argsA ...int) {
 	os.Exit(argsA[0])
 }
 
+// init the main VM
+
+var RetG interface{}
+var NotFoundG = interface{}(errors.New("not found"))
+
+func InitQLVM() {
+	if QlVMG == nil {
+		qlang.SetOnPop(func(v interface{}) {
+			RetG = v
+		})
+
+		// qlang.SetDumpCode("1")
+
+		importQLNonGUIPackages()
+
+		QlVMG = qlang.New()
+	}
+}
+
+func TestText(argsA ...interface{}) interface{} {
+	lenT := len(argsA)
+
+	if lenT < 2 {
+		return fmt.Errorf("not enough parameters")
+	}
+
+	v1 := argsA[0]
+	v2 := argsA[1]
+
+	var v3 string
+	var v4 string
+
+	if lenT > 3 {
+		v3 = tk.ToStr(argsA[2])
+		v4 = "(" + tk.ToStr(argsA[3]) + ")"
+	} else if lenT > 2 {
+		v3 = tk.ToStr(argsA[2])
+	} else {
+		v3 = tk.ToStr(tk.GetSeq())
+	}
+
+	if v1 == v2 {
+		tk.Pl("test %v%v passed", v3, v4)
+	} else {
+		return fmt.Errorf("test %v%v failed: %#v <-> %#v\n-----\n%v\n-----\n%v", v3, v4, v1, v2, v1, v2)
+	}
+
+	return nil
+}
+
+func TestTextStartsWith(argsA ...interface{}) interface{} {
+	lenT := len(argsA)
+
+	if lenT < 2 {
+		return fmt.Errorf("not enough parameters")
+	}
+
+	v1 := argsA[0]
+	v2 := argsA[1]
+
+	var v3 string
+	var v4 string
+
+	if lenT > 3 {
+		v3 = tk.ToStr(argsA[2])
+		v4 = "(" + tk.ToStr(argsA[3]) + ")"
+	} else if lenT > 2 {
+		v3 = tk.ToStr(argsA[2])
+	} else {
+		v3 = tk.ToStr(tk.GetSeq())
+	}
+
+	if strings.HasPrefix(tk.ToStr(v1), tk.ToStr(v2)) {
+		tk.Pl("test %v%v passed", v3, v4)
+	} else {
+		return fmt.Errorf("test %v%v failed: %#v <-> %#v\n-----\n%v\n-----\n%v", v3, v4, v1, v2, v1, v2)
+	}
+
+	return nil
+}
+
+func TestTextReg(argsA ...interface{}) interface{} {
+	lenT := len(argsA)
+
+	if lenT < 2 {
+		return fmt.Errorf("not enough parameters")
+	}
+
+	v1 := argsA[0]
+	v2 := argsA[1]
+
+	var v3 string
+	var v4 string
+
+	if lenT > 3 {
+		v3 = tk.ToStr(argsA[2])
+		v4 = "(" + tk.ToStr(argsA[3]) + ")"
+	} else if lenT > 2 {
+		v3 = tk.ToStr(argsA[2])
+	} else {
+		v3 = tk.ToStr(tk.GetSeq())
+	}
+
+	if tk.RegMatchX(tk.ToStr(v1), tk.ToStr(v2)) {
+		tk.Pl("test %v%v passed", v3, v4)
+	} else {
+		return fmt.Errorf("test %v%v failed: %#v <-> %#v\n-----\n%v\n-----\n%v", v3, v4, v1, v2, v1, v2)
+	}
+
+	return nil
+}
+
+func magic(numberA int, argsA ...string) interface{} {
+	fcT := GetMagic(numberA)
+
+	if tk.IsErrorString(fcT) {
+		return tk.ErrorStringToError(fcT)
+	}
+
+	return runCode(fcT, argsA)
+
+}
+
+func RunScriptX(codeA string, argsA ...string) interface{} {
+
+	InitQLVM()
+
+	// if argsA != nil && len(argsA) > 0 {
+	QlVMG.SetVar("argsG", argsA)
+	// }
+
+	errT := QlVMG.SafeEval(codeA)
+
+	if errT != nil {
+		return errT
+	}
+
+	rs, ok := QlVMG.GetVar("outG")
+
+	if ok {
+		if rs != nil {
+			return rs
+		}
+	}
+
+	return NotFoundG
+
+}
+
+func RunScript(codeA, inputA string, argsA []string, parametersA map[string]string, optionsA ...string) (string, error) {
+	if tk.IfSwitchExists(optionsA, "-verbose") {
+		tk.Pl("Starting...")
+	}
+
+	if !QLNonGUIPackagesInitFlag {
+		importQLNonGUIPackages()
+	}
+
+	if tk.StartsWith(codeA, "//TXDEF#") {
+		tmps := tk.DecryptStringByTXDEF(codeA, "topxeq")
+
+		if !tk.IsErrStr(tmps) {
+			codeA = tmps
+		}
+	}
+
+	vmT := qlang.New("-noexit")
+
+	vmT.SetVar("inputG", inputA)
+
+	vmT.SetVar("argsG", argsA)
+
+	vmT.SetVar("basePathG", tk.GetSwitch(optionsA, "-base=", ""))
+
+	vmT.SetVar("paraMapG", parametersA)
+
+	retT := ""
+
+	errT := vmT.SafeEval(codeA)
+
+	if errT != nil {
+		return retT, errT
+	}
+
+	rs, ok := vmT.GetVar("outG")
+
+	if ok {
+		if rs != nil {
+			strT, ok := rs.(string)
+			if ok {
+				return strT, nil
+			}
+
+			return fmt.Sprintf("%v", rs), nil
+		}
+
+		return retT, nil
+	}
+
+	return retT, nil
+}
+
+func RunScriptOnHttp(codeA string, resA http.ResponseWriter, reqA *http.Request, inputA string, argsA []string, parametersA map[string]string, optionsA ...string) (string, error) {
+	if tk.IfSwitchExists(optionsA, "-verbose") {
+		tk.Pl("Starting...")
+	}
+
+	if !QLNonGUIPackagesInitFlag {
+		importQLNonGUIPackages()
+	}
+
+	if tk.StartsWith(codeA, "//TXDEF#") {
+		tmps := tk.DecryptStringByTXDEF(codeA, "topxeq")
+
+		if !tk.IsErrStr(tmps) {
+			codeA = tmps
+		}
+	}
+
+	vmT := qlang.New("-noexit")
+
+	vmT.SetVar("inputG", inputA)
+
+	vmT.SetVar("argsG", argsA)
+
+	vmT.SetVar("basePathG", tk.GetSwitch(optionsA, "-base=", ""))
+
+	vmT.SetVar("paraMapG", parametersA)
+
+	vmT.SetVar("requestG", reqA)
+
+	vmT.SetVar("responseG", resA)
+
+	retT := ""
+
+	errT := vmT.SafeEval(codeA)
+
+	if errT != nil {
+		return retT, errT
+	}
+
+	rs, ok := vmT.GetVar("outG")
+
+	if ok {
+		if rs != nil {
+			strT, ok := rs.(string)
+			if ok {
+				return strT, nil
+			}
+
+			return fmt.Sprintf("%v", rs), nil
+		}
+
+		return retT, nil
+	}
+
+	return retT, nil
+}
+
 func qlEval(strA string) string {
 	vmT := qlang.New()
-
-	retG = notFoundG
 
 	errT := vmT.SafeEval(strA)
 
@@ -232,25 +490,11 @@ func qlEval(strA string) string {
 		return tk.Spr("%v", rs)
 	}
 
-	if retG != notFoundG {
-		return tk.Spr("%v", retG)
+	if rs != NotFoundG {
+		return tk.Spr("%v", rs)
 	}
 
 	return tk.ErrStrF("no result")
-}
-
-func panicIt(valueA interface{}) {
-	panic(valueA)
-}
-
-func getUint64Value(v reflect.Value) uint16 {
-	tk.Pl("%x", v.Interface())
-
-	var p *uint16
-
-	p = (v.Interface().(*uint16))
-
-	return *p
 }
 
 func runScript(codeA string, modeA string, argsA ...string) interface{} {
@@ -261,8 +505,6 @@ func runScript(codeA string, modeA string, argsA ...string) interface{} {
 		// if argsA != nil && len(argsA) > 0 {
 		vmT.SetVar("argsG", argsA)
 		// }
-
-		retG = notFoundG
 
 		errT := vmT.SafeEval(codeA)
 
@@ -278,43 +520,35 @@ func runScript(codeA string, modeA string, argsA ...string) interface{} {
 			}
 		}
 
-		return retG
+		return NotFoundG
 	} else {
 		return tk.SystemCmd("gox", append([]string{codeA}, argsA...)...)
 	}
 
 }
 
-func runScriptX(codeA string, argsA ...string) interface{} {
+func runFile(argsA ...string) interface{} {
+	lenT := len(argsA)
 
-	initQLVM()
+	// full version related start
 
-	// if argsA != nil && len(argsA) > 0 {
-	qlVMG.SetVar("argsG", argsA)
-	// }
+	// full version related end
 
-	retG = notFoundG
-
-	errT := qlVMG.SafeEval(codeA)
-
-	if errT != nil {
-		return errT
+	if lenT < 1 {
+		return nil
 	}
 
-	rs, ok := qlVMG.GetVar("outG")
+	fcT := tk.LoadStringFromFile(argsA[0])
 
-	if ok {
-		if rs != nil {
-			return rs
-		}
+	if tk.IsErrorString(fcT) {
+		return tk.Errf("Invalid file content: %v", tk.GetErrorString(fcT))
 	}
 
-	return retG
-
+	return runScript(fcT, "", argsA[1:]...)
 }
 
 func runCode(codeA string, argsA ...interface{}) interface{} {
-	initQLVM()
+	InitQLVM()
 
 	vmT := qlang.New()
 
@@ -373,7 +607,7 @@ func runCode(codeA string, argsA ...interface{}) interface{} {
 	// 	vmT.SetVar("argsG", os.Args)
 	// }
 
-	retG = notFoundG
+	RetG = NotFoundG
 
 	errT := vmT.SafeEval(codeA)
 
@@ -389,14 +623,28 @@ func runCode(codeA string, argsA ...interface{}) interface{} {
 		}
 	}
 
-	if retG != notFoundG {
-		return retG
+	if RetG != NotFoundG {
+		return RetG
 	}
 
-	return retG
+	return RetG
 }
 
-func getMagic(numberA int) string {
+func panicIt(valueA interface{}) {
+	panic(valueA)
+}
+
+func getUint64Value(v reflect.Value) uint16 {
+	tk.Pl("%x", v.Interface())
+
+	var p *uint16
+
+	p = (v.Interface().(*uint16))
+
+	return *p
+}
+
+func GetMagic(numberA int) string {
 	if numberA < 0 {
 		return tk.GenerateErrorString("invalid magic number")
 	}
@@ -1096,17 +1344,6 @@ func leRemoveLines(startA int, endA int) error {
 	return nil
 }
 
-func magic(numberA int, argsA ...string) interface{} {
-	fcT := getMagic(numberA)
-
-	if tk.IsErrorString(fcT) {
-		return tk.ErrorStringToError(fcT)
-	}
-
-	return runCode(fcT, argsA)
-
-}
-
 func newCharFunc(funcA interface{}) *charlang.Function {
 	funcT := (funcA).(*execq.Function)
 	// f := func(s interface{}) (interface{}, error) {
@@ -1453,7 +1690,7 @@ func NewFuncFloatStringError(funcA *interface{}) *(func(float64) (string, error)
 
 func printValue(nameA string) {
 
-	v, idx, ok := qlVMG.GetVarWithIndex(nameA)
+	v, idx, ok := QlVMG.GetVarWithIndex(nameA)
 
 	if !ok {
 		tk.Pl("no variable by the name found: %v", nameA)
@@ -1466,7 +1703,7 @@ func printValue(nameA string) {
 
 func defined(nameA string) bool {
 
-	_, ok := qlVMG.GetVar(nameA)
+	_, ok := QlVMG.GetVar(nameA)
 
 	return ok
 
@@ -1594,7 +1831,7 @@ func isValidNotEmpty(vA interface{}, argsA ...string) bool {
 	return rsT
 }
 
-func isDefined(vA interface{}) bool {
+func IsDefined(vA interface{}) bool {
 	if vA == spec.Undefined {
 		return false
 	}
@@ -1602,8 +1839,16 @@ func isDefined(vA interface{}) bool {
 	return true
 }
 
-func isUndefined(vA interface{}) bool {
+func IsUndefined(vA interface{}) bool {
 	if vA == spec.Undefined {
+		return true
+	}
+
+	return false
+}
+
+func IsNotFound(vA interface{}) bool {
+	if vA == NotFoundG {
 		return true
 	}
 
@@ -1843,15 +2088,15 @@ func strToTime(strA string, formatA ...string) interface{} {
 }
 
 func getStack() string {
-	return qlVMG.Stack.String()
+	return QlVMG.Stack.String()
 }
 
 func getVars() string {
-	return qlVMG.VarsInfo()
+	return QlVMG.VarsInfo()
 }
 
 func typeOfVar(nameA string) string {
-	v, ok := qlVMG.GetVar(nameA)
+	v, ok := QlVMG.GetVar(nameA)
 
 	if !ok {
 		return tk.ErrStrf("no variable by the name found: %v", nameA)
@@ -1888,14 +2133,12 @@ func trim(vA interface{}, argsA ...string) string {
 	return tk.Trim(fmt.Sprintf("%v", vA), argsA...)
 }
 
-
-
-var scriptPathG string
+var ScriptPathG string
 
 func importQLNonGUIPackages() {
 	// getPointer := func(nameA string) {
 
-	// 	v, ok := qlVMG.GetVar(nameA)
+	// 	v, ok := QlVMG.GetVar(nameA)
 
 	// 	if !ok {
 	// 		tk.Pl("no variable by the name found: %v", nameA)
@@ -1917,15 +2160,17 @@ func importQLNonGUIPackages() {
 		// common related 一般函数
 		"defined":         defined,               // 查看某变量是否已经定义，注意参数是字符串类型的变量名，例： if defined("a") {...}
 		"pass":            tk.Pass,               // 没有任何操作的函数，一般用于脚本结尾避免脚本返回一个结果导致输出乱了
-		"isDefined":       isDefined,             // 判断某变量是否已经定义，与defined的区别是传递的是变量名而不是字符串方式的变量，例： if isDefined(a) {...}
-		"isDef":           isDefined,             // 等同于isDef
-		"isUndefined":     isUndefined,           // 判断某变量是否未定义
-		"isUndef":         isUndefined,           // 等同于isUndefined
+		"isDefined":       IsDefined,             // 判断某变量是否已经定义，与defined的区别是传递的是变量名而不是字符串方式的变量，例： if isDefined(a) {...}
+		"isDef":           IsDefined,             // 等同于isDef
+		"isUndefined":     IsUndefined,           // 判断某变量是否未定义
+		"isUndef":         IsUndefined,           // 等同于IsUndefined
 		"isNil":           isNil,                 // 判断一个变量或表达式是否为nil
 		"isValid":         isValid,               // 判断某变量是否已经定义，并且不是nil，如果传入了第二个参数，还可以判断该变量是否类型是该类型，例： if isValid(a, "string") {...}
 		"isValidNotEmpty": isValidNotEmpty,       // 判断某变量是否已经定义，并且不是nil或空字符串，如果传入了第二个参数，还可以判断该变量是否类型是该类型，例： if isValid(a, "string") {...}
 		"isValidX":        isValidNotEmpty,       // 等同于isValidNotEmpty
 		"eval":            qlEval,                // 运行一段Gox语言代码并获得其返回值，返回值可以放于名为outG的全局变量中，也可以作为最后一个表达式的返回值返回
+		"flexEval":        tk.FlexEval,           // 计算一个表达式，支持普通语法，支持自定义函数，第一个参数是表达式字符串，然后是0个或多个参数，在表达式中可以用v1、v2……来指代，表达式采用 github.com/antonmedv/expr 提供的表达式计算引擎，相关进一步文档也可以从这里获取
+		"flexEvalMap":     tk.FlexEvalMap,        // 类似flexEval，区别是：flexEval从第二个参数开始可以接受多个参数，并在表达式中以v1、v2这样来指代，而flexEvalMap则只允许有一个参数，需要是映射类型，这样可以直接用键名在表达式中引用这些变量
 		"typeOf":          tk.TypeOfValue,        // 给出某变量的类型名
 		"typeOfReflect":   tk.TypeOfValueReflect, // 给出某变量的类型名（使用了反射方式）
 		"typeOfVar":       typeOfVar,             // 给出某变量的内部类型名，注意参数是字符串类型的变量名
@@ -1951,6 +2196,10 @@ func importQLNonGUIPackages() {
 		"dumpf":  tk.Dumpf,
 		"sdump":  tk.Sdump, // 生成一个或多个对象信息供参考
 		"sdumpf": tk.Sdumpf,
+
+		"testByText":       TestText,           // 用于测试
+		"testByStartsWith": TestTextStartsWith, // 用于测试
+		"testByReg":        TestTextReg,        // 用于测试
 
 		// output related 输出相关
 		"pv":        printValue,   // 输出一个变量的值，注意参数是字符串类型的变量名，例： pv("a")
@@ -1993,6 +2242,8 @@ func importQLNonGUIPackages() {
 		"ceil":         tk.Ceil,                 // 向上取整
 		"floor":        tk.Floor,                // 向下取整
 		"round":        tk.Round,                // 四舍五入
+		"maxX":         tk.Max,                  // 多个数取最大值
+		"minX":         tk.Min,                  // 多个数取最小值
 
 		// string related 字符串相关
 		"trim":                 trim,               // 取出字符串前后的空白字符，可选的第二个参数可以是待去掉的字符列表，等同于tk.Trim, 但支持Undefind（转空字符串）和nil
@@ -2029,9 +2280,11 @@ func importQLNonGUIPackages() {
 		"getNowStrCompact":     tk.GetNowTimeString,       // 获取一个简化的表示当前时间的字符串，格式：20200202080915
 		"getNowStringCompact":  tk.GetNowTimeStringFormal, // 等同于getNowStringCompact
 		"getNowDateStrCompact": getNowDateStrCompact,      // 获取一个简化的表示当前日期的字符串，格式：20210215
-		"genTimeStamp":         tk.GetTimeStampMid,        // 生成时间戳，格式为13位的Unix时间戳1640133706954，例：timeStampT = genTimeStamp(time.Now())
-		"genRandomStr":         tk.GenerateRandomStringX,  // 生成随机字符串，函数定义： genRandomStr("-min=6", "-max=8", "-noUpper", "-noLower", "-noDigit", "-special", "-space", "-invalid")
-		"generateRandomString": tk.GenerateRandomString,   // 生成随机字符串，函数定义： (minCharA, maxCharA int, hasUpperA, hasLowerA, hasDigitA, hasSpecialCharA, hasSpaceA bool, hasInvalidChars bool) string
+		"getNowTimeStamp":      tk.GetNowTick,             // 获取一个表示当前时间的时间戳，毫秒为单位，整数形式
+		"getNowTick":           tk.GetNowTick,
+		"genTimeStamp":         tk.GetTimeStampMid,       // 生成时间戳，格式为13位的Unix时间戳1640133706954，例：timeStampT = genTimeStamp(time.Now())
+		"genRandomStr":         tk.GenerateRandomStringX, // 生成随机字符串，函数定义： genRandomStr("-min=6", "-max=8", "-noUpper", "-noLower", "-noDigit", "-special", "-space", "-invalid")
+		"generateRandomString": tk.GenerateRandomString,  // 生成随机字符串，函数定义： (minCharA, maxCharA int, hasUpperA, hasLowerA, hasDigitA, hasSpecialCharA, hasSpaceA bool, hasInvalidChars bool) string
 
 		// regex related 正则表达式相关
 		"regMatch":        tk.RegMatchX,          // 判断某字符串是否完整符合某表达式，例： if regMatch(mailT, `^([A-Za-z0-9_\-\.])+\@([A-Za-z0-9_\-\.])+\.([A-Za-z]{2,8})$`) {...}
@@ -2046,25 +2299,28 @@ func importQLNonGUIPackages() {
 		"regSplit":        tk.RegSplitX,          // 根据正则表达式分割字符串（以符合条件的匹配来分割），函数定义： regSplit(strA, patternA string, nA ...int) []string
 
 		// conversion related 转换相关
-		"nilToEmpty":      nilToEmpty,                     // 将nil、error等值都转换为空字符串，其他的转换为字符串, 加-nofloat参数将浮点数转换为整数，-trim参数将结果trim
-		"nilToEmptyOk":    nilToEmptyOk,                   // 将nil、error等值都转换为空字符串，其他的转换为字符串, 加-nofloat参数将浮点数转换为整数，-trim参数将结果trim，第二个返回值是bool类型，如果值是undefined，则返回false，其他情况为true
-		"intToStr":        tk.IntToStrX,                   // 整数转字符串
-		"strToInt":        tk.StrToIntWithDefaultValue,    // 字符串转整数
-		"floatToStr":      tk.Float64ToStr,                // 浮点数转字符串
-		"strToFloat":      tk.StrToFloat64,                // 字符串转浮点数，如果第二个参数（可选）存在，则默认错误时返回该值，否则错误时返回-1
-		"timeToStr":       tk.FormatTime,                  // 时间转字符串，函数定义: timeToStr(timeA time.Time, formatA ...string) string，formatA可为"2006-01-02 15:04:05"（默认值）等字符串，为compact代表“20060102150405”
-		"timeStampToTime": tk.GetTimeFromUnixTimeStampMid, // Unix时间戳转时间（time.Time），支持10位和13位的时间戳，用法: timeT = timeToStr(timeStampToTime("1641139200"), "compact") ，得到20220103000000
-		"formatTime":      tk.FormatTime,                  // 等同于timeToStr
-		"strToTime":       strToTime,                      // 字符串转时间
-		"toTime":          tk.ToTime,                      // 字符串或时间转时间
-		"bytesToData":     tk.BytesToData,                 // 字节数组转任意类型变量，可选参数-endian=B或L指定使用BigEndian字节顺序还是LittleEndian，函数定义func(bytesA []byte, dataA interface{}, optsA ...string) error，其中dataA为接收变量
-		"dataToBytes":     tk.DataToBytes,                 // 任意类型值转字节数组，可选参数-endian=B或L指定使用BigEndian字节顺序还是LittleEndian
-		"toStr":           tk.ToStr,                       // 任意值转字符串
-		"toInt":           tk.ToInt,                       // 任意值转整数
-		"toFloat":         tk.ToFloat,                     // 任意值转浮点数
-		"toByte":          tk.ToByte,                      // 任意值转字节
-		"toSimpleMap":     tk.SimpleMapToString,           // 将一个map（map[string]string或map[string]interface{}）转换为Simple Map字符串
-		"fromSimpleMap":   tk.LoadSimpleMapFromString,     // 将一个Simple Map字符串转换为map[string]string
+		"nilToEmpty":      nilToEmpty,                  // 将nil、error等值都转换为空字符串，其他的转换为字符串, 加-nofloat参数将浮点数转换为整数，-trim参数将结果trim
+		"nilToEmptyOk":    nilToEmptyOk,                // 将nil、error等值都转换为空字符串，其他的转换为字符串, 加-nofloat参数将浮点数转换为整数，-trim参数将结果trim，第二个返回值是bool类型，如果值是undefined，则返回false，其他情况为true
+		"intToStr":        tk.IntToStrX,                // 整数转字符串
+		"strToInt":        tk.StrToIntWithDefaultValue, // 字符串转整数
+		"floatToStr":      tk.Float64ToStr,             // 浮点数转字符串
+		"strToFloat":      tk.StrToFloat64,             // 字符串转浮点数，如果第二个参数（可选）存在，则默认错误时返回该值，否则错误时返回-1
+		"timeToStr":       tk.FormatTime,               // 时间转字符串，函数定义: timeToStr(timeA time.Time, formatA ...string) string，formatA可为"2006-01-02 15:04:05"（默认值）等字符串，为compact代表“20060102150405”
+		"timeStampToTime": tk.TimeStampToTime,          // Unix时间戳转时间（time.Time），支持10位和13位的时间戳，用法: timeT = timeToStr(timeStampToTime("1641139200"), "compact") ，得到20220103000000，也可直接传入整数时间戳（纳秒为单位），如果参数是nil则返回当前时间，如果字符串解析失败，则返回时间零值（1970年...）
+		"tickToTime":      tk.TimeStampToTime,
+		"timeToTick":      tk.GetTimeStampMid,         // 将时间转换为时间戳，13位字符串形式，单位毫秒
+		"timeToTickInt":   tk.GetTimeStampNanoInt,     // 将时间转换为时间戳，整数形式，单位纳秒
+		"formatTime":      tk.FormatTime,              // 等同于timeToStr
+		"strToTime":       strToTime,                  // 字符串转时间
+		"toTime":          tk.ToTime,                  // 字符串或时间转时间
+		"bytesToData":     tk.BytesToData,             // 字节数组转任意类型变量，可选参数-endian=B或L指定使用BigEndian字节顺序还是LittleEndian，函数定义func(bytesA []byte, dataA interface{}, optsA ...string) error，其中dataA为接收变量
+		"dataToBytes":     tk.DataToBytes,             // 任意类型值转字节数组，可选参数-endian=B或L指定使用BigEndian字节顺序还是LittleEndian
+		"toStr":           tk.ToStr,                   // 任意值转字符串
+		"toInt":           tk.ToInt,                   // 任意值转整数
+		"toFloat":         tk.ToFloat,                 // 任意值转浮点数
+		"toByte":          tk.ToByte,                  // 任意值转字节
+		"toSimpleMap":     tk.SimpleMapToString,       // 将一个map（map[string]string或map[string]interface{}）转换为Simple Map字符串
+		"fromSimpleMap":   tk.LoadSimpleMapFromString, // 将一个Simple Map字符串转换为map[string]string
 
 		"hexToBytes":  tk.HexToBytes,  // 将16进制字符串转换为字节数组([]byte)
 		"bytesToHex":  tk.BytesToHex,  // 将字节数组([]byte)转换为16进制字符串
@@ -2078,6 +2334,9 @@ func importQLNonGUIPackages() {
 
 		"mssToMsi": tk.MSS2MSI, // 转换map[string]string到map[string]interface{}
 		"msiToMss": tk.MSI2MSS, // 转换map[string]interface{}到map[string]string
+
+		"strArrayToAnyArray": tk.StringArrayToAnyArray, // 转换[]string到[]interface{}
+		"anyArrayToStrArray": tk.AnyArrayToStringArray, // 转换[]interface{}到[]string
 
 		"mssToCharMap": charlang.MssToMap, // 转换map[string]string到charlang中的map
 		"msiToCharMap": charlang.MsiToMap, // 转换map[string]interface{}到charlang中的map
@@ -2316,6 +2575,8 @@ func importQLNonGUIPackages() {
 		//	}
 		// pl("在数据库中找到%v条记录", len(sqlRsT))
 
+		"dbQueryOrdered": sqltk.QueryDBOrderedX, // 与dbQuery相同，返回的结果是一个有序列表的数组，其值只能通过Get和Set来操作
+
 		"dbQueryRecs": sqltk.QueryDBRecsX, // 进行数据库查询，所有字段结果都将转换为字符串，返回结果为[][]string，即二维数组，其中第一行为表头字段名：[["Field1", "Field2"],["Value1","Value2"]]，例：
 		// sqlRsT = dbQueryRecs(dbT, `SELECT * FROM TABLE1 WHERE ID=3`)
 		// if isErr(sqlRsT) {
@@ -2395,8 +2656,6 @@ func importQLNonGUIPackages() {
 		"leLineEnd":     leLineEnd,       // 读取或设置行文本编辑器缓冲区中行末字符（一般是\n或\r\n），不带参数是获取，带参数是设置
 		"leSilent":      leSilent,        // 读取或设置行文本编辑器的静默模式（布尔值），不带参数是获取，带参数是设置
 
-		
-
 		// compress/uncompress related 压缩解压缩相关函数
 
 		"compress":   tk.Compress,
@@ -2405,8 +2664,16 @@ func importQLNonGUIPackages() {
 		"compressText":   tk.CompressText,
 		"uncompressText": tk.UncompressText,
 
+		// bluetooth relate 蓝牙相关
+		// "bluetoothDiscoverDevice": tk.BluetoothDiscoverDevice,
+
 		// misc related 杂项相关函数
+		"readAllStr": tk.ReadAllString,
+		"closeX":     tk.Close,
+
 		"dealRef": tk.DealRef,
+
+		"getSeq": tk.GetSeq, // 获得一个每次增长的序列值（整数）
 
 		"lockN":    tk.LockN, // lock a global lock, 0 <= N < 10
 		"unlockN":  tk.UnlockN,
@@ -2425,8 +2692,8 @@ func importQLNonGUIPackages() {
 		"newFuncSS":        NewFuncStringStringB,            // 将Gox语言中的定义的函数转换为Go语言中类似 func f(a string) string 的形式
 		"newCharFunc":      newCharFunc,                     // 将Gox语言中的定义的函数转换为Charlang语言中类似 func f() 的形式
 		"newStringRing":    tk.NewStringRing,                // 创建一个字符串环，大小固定，后进的会将先进的最后一个顶出来
-		"getCfgStr":        getCfgString,                    // 从根目录（Windows下为C:\，*nix下为/）的gox子目录中获取文件名为参数1的配置项字符串
-		"setCfgStr":        setCfgString,                    // 向根目录（Windows下为C:\，*nix下为/）的gox子目录中写入文件名为参数1，内容为参数2的配置项字符串，例：saveCfgStr("timeout", "30")
+		"getCfgStr":        GetCfgString,                    // 从根目录（Windows下为C:\，*nix下为/）的gox子目录中获取文件名为参数1的配置项字符串
+		"setCfgStr":        SetCfgString,                    // 向根目录（Windows下为C:\，*nix下为/）的gox子目录中写入文件名为参数1，内容为参数2的配置项字符串，例：saveCfgStr("timeout", "30")
 		"genQR":            tk.GenerateQR,                   // 生成二维码，例：genQR("http://www.example.com", "-level=2"), level 0..3，越高容错性越好，但越大
 		"newChar":          charlang.NewChar,                // new a charlang script VM
 		"runChar":          charlang.RunChar,                // run a charlang script VM
@@ -2451,11 +2718,10 @@ func importQLNonGUIPackages() {
 		"getStack":        getStack,           // 获取堆栈
 		"getVars":         getVars,            // 获取当前变量表
 
-		"scriptPathG": scriptPathG, // 所执行脚本的路径
-		"versionG":    versionG,    // Gox/Goxc的版本号
+		"scriptPathG": ScriptPathG, // 所执行脚本的路径
+		"versionG":    VersionG,    // Gox/Goxc的版本号
 		"leBufG":      leBufG,      // 内置行文本编辑器所用的编辑缓冲区
 
-		
 	}
 
 	qlang.Import("", defaultExports)
@@ -2609,8 +2875,6 @@ func importQLNonGUIPackages() {
 
 	qlang.Import("github_topxeq_docxrepl", qlgithub_topxeq_docxrepl.Exports)
 
-	
-
 	qlang.Import("github_fogleman_gg", qlgithub_fogleman_gg.Exports)
 	qlang.Import("gg", qlgithub_fogleman_gg.Exports)
 
@@ -2639,7 +2903,7 @@ func importQLNonGUIPackages() {
 }
 
 func showHelp() {
-	tk.Pl("Gox by TopXeQ V%v\n", versionG)
+	tk.Pl("Gox by TopXeQ V%v\n", VersionG)
 
 	tk.Pl("Usage: gox [-v|-h] test.gox, ...\n")
 	tk.Pl("or just gox without arguments to start REPL instead.\n")
@@ -2667,7 +2931,7 @@ func runInteractiveQlang() int {
 	var following bool
 	var source string
 
-	tk.Pl("Gox %v", versionG)
+	tk.Pl("Goxc %v", VersionG)
 
 	scanner := bufio.NewScanner(os.Stdin)
 
@@ -2712,9 +2976,9 @@ func runInteractiveQlang() int {
 		// 	}
 		// }
 
-		retG = notFoundG
+		RetG = NotFoundG
 
-		err := qlVMG.SafeEval(source)
+		err := QlVMG.SafeEval(source)
 
 		if err != nil {
 			fmt.Fprintln(os.Stderr, err)
@@ -2723,8 +2987,8 @@ func runInteractiveQlang() int {
 			continue
 		}
 
-		if retG != notFoundG {
-			fmt.Println(retG)
+		if RetG != NotFoundG {
+			fmt.Println(RetG)
 		}
 
 		following = false
@@ -2744,27 +3008,6 @@ func runInteractiveQlang() int {
 // Non GUI related end
 
 
-
-func runFile(argsA ...string) interface{} {
-	lenT := len(argsA)
-
-	// full version related start
-	
-	// full version related end
-
-	if lenT < 1 {
-		return nil
-	}
-
-	fcT := tk.LoadStringFromFile(argsA[0])
-
-	if tk.IsErrorString(fcT) {
-		return tk.Errf("Invalid file content: %v", tk.GetErrorString(fcT))
-	}
-
-	return runScript(fcT, "", argsA[1:]...)
-}
-
 func runLine(strA string) interface{} {
 	argsT, errT := tk.ParseCommandLine(strA)
 
@@ -2779,7 +3022,7 @@ func runArgs(argsA ...string) interface{} {
 	argsT := argsA
 
 	if tk.IfSwitchExistsWhole(argsT, "-version") {
-		tk.Pl("Gox by TopXeQ V%v", versionG)
+		tk.Pl("Gox by TopXeQ V%v", VersionG)
 		return nil
 	}
 
@@ -2789,8 +3032,6 @@ func runArgs(argsA ...string) interface{} {
 	}
 
 	scriptT := tk.GetParameterByIndexWithDefaultValue(argsT, 0, "")
-
-	
 
 	if tk.IfSwitchExistsWhole(argsT, "-initgui") {
 		applicationPathT := tk.GetApplicationPath()
@@ -2837,7 +3078,7 @@ func runArgs(argsA ...string) interface{} {
 
 	ifXieT := tk.IfSwitchExistsWhole(argsT, "-xie")
 	ifClipT := tk.IfSwitchExistsWhole(argsT, "-clip")
-	ifEmbedT := (codeTextG != "") && (!tk.IfSwitchExistsWhole(argsT, "-noembed"))
+	ifEmbedT := (CodeTextG != "") && (!tk.IfSwitchExistsWhole(argsT, "-noembed"))
 
 	ifInExeT := false
 	inExeCodeT := ""
@@ -2875,7 +3116,7 @@ func runArgs(argsA ...string) interface{} {
 	}
 
 	if tk.IfSwitchExistsWhole(argsT, "-shell") {
-		initQLVM()
+		InitQLVM()
 
 		runInteractiveQlang()
 
@@ -2902,7 +3143,7 @@ func runArgs(argsA ...string) interface{} {
 		} else if tk.IfFileExists(autoGxbPathT) {
 			scriptT = autoGxbPathT
 		} else {
-			initQLVM()
+			InitQLVM()
 
 			runInteractiveQlang()
 
@@ -2993,7 +3234,7 @@ func runArgs(argsA ...string) interface{} {
 	ifOpenT := tk.IfSwitchExistsWhole(argsT, "-open")
 	ifCompileT := tk.IfSwitchExistsWhole(argsT, "-compile")
 
-	verboseG = tk.IfSwitchExistsWhole(argsT, "-verbose")
+	VerboseG = tk.IfSwitchExistsWhole(argsT, "-verbose")
 
 	ifMagicT := false
 	magicNumberT, errT := tk.StrToIntE(scriptT)
@@ -3007,7 +3248,7 @@ func runArgs(argsA ...string) interface{} {
 	if ifInExeT && inExeCodeT != "" && !tk.IfSwitchExistsWhole(os.Args, "-noin") {
 		fcT = inExeCodeT
 
-		scriptPathG = ""
+		ScriptPathG = ""
 	} else if cmdT != "" {
 		fcT = cmdT
 
@@ -3015,11 +3256,11 @@ func runArgs(argsA ...string) interface{} {
 			fcT = tk.UrlDecode(fcT)
 		}
 
-		scriptPathG = ""
+		ScriptPathG = ""
 	} else if ifMagicT {
-		fcT = getMagic(magicNumberT)
+		fcT = GetMagic(magicNumberT)
 
-		scriptPathG = ""
+		ScriptPathG = ""
 	} else if ifRunT {
 		if tk.IfSwitchExistsWhole(os.Args, "-urlDecode") {
 			fcT = tk.UrlDecode(scriptT)
@@ -3028,28 +3269,28 @@ func runArgs(argsA ...string) interface{} {
 		}
 		tk.Pl("run cmd(%v)", fcT)
 
-		scriptPathG = ""
+		ScriptPathG = ""
 	} else if ifExampleT {
 		if (!tk.EndsWith(scriptT, ".gox")) && (!tk.EndsWith(scriptT, ".xie")) {
 			scriptT += ".gox"
 		}
 
-		scriptPathG = "https://gitee.com/topxeq/gox/raw/master/scripts/" + scriptT
+		ScriptPathG = "https://gitee.com/topxeq/gox/raw/master/scripts/" + scriptT
 
 		fcT = tk.DownloadPageUTF8("https://gitee.com/topxeq/gox/raw/master/scripts/"+scriptT, nil, "", 30)
 
 	} else if ifRemoteT {
-		scriptPathG = scriptT
+		ScriptPathG = scriptT
 		fcT = tk.DownloadPageUTF8(scriptT, nil, "", 30)
 
 	} else if ifClipT {
 		fcT = tk.GetClipText()
 
-		scriptPathG = ""
+		ScriptPathG = ""
 	} else if ifEmbedT {
-		fcT = codeTextG
+		fcT = CodeTextG
 
-		scriptPathG = ""
+		ScriptPathG = ""
 	} else if ifCloudT {
 		if (!tk.EndsWith(scriptT, ".gox")) && (!tk.EndsWith(scriptT, ".xie")) {
 			scriptT += ".gox"
@@ -3065,7 +3306,7 @@ func runArgs(argsA ...string) interface{} {
 			cfgStrT := tk.Trim(tk.LoadStringFromFile(cfgPathT))
 
 			if !tk.IsErrorString(cfgStrT) {
-				scriptPathG = cfgStrT + scriptT
+				ScriptPathG = cfgStrT + scriptT
 
 				fcT = tk.DownloadPageUTF8(cfgStrT+scriptT, nil, "", 30)
 
@@ -3075,7 +3316,7 @@ func runArgs(argsA ...string) interface{} {
 		}
 
 		if !gotT {
-			scriptPathG = scriptT
+			ScriptPathG = scriptT
 			fcT = tk.DownloadPageUTF8(scriptT, nil, "", 30)
 		}
 
@@ -3084,36 +3325,36 @@ func runArgs(argsA ...string) interface{} {
 			scriptT += ".gox"
 		}
 
-		fcT = downloadStringFromSSH(sshT, scriptT)
+		fcT = DownloadStringFromSSH(sshT, scriptT)
 
 		if tk.IsErrorString(fcT) {
 
 			return tk.Errf("failed to get script from SSH: %v", tk.GetErrorString(fcT))
 		}
 
-		scriptPathG = ""
+		ScriptPathG = ""
 	} else if ifGoPathT {
 		if (!tk.EndsWith(scriptT, ".gox")) && (!tk.EndsWith(scriptT, ".xie")) {
 			scriptT += ".gox"
 		}
 
-		scriptPathG = filepath.Join(tk.GetEnv("GOPATH"), "src", "github.com", "topxeq", "gox", "scripts", scriptT)
+		ScriptPathG = filepath.Join(tk.GetEnv("GOPATH"), "src", "github.com", "topxeq", "goxc", "scripts", scriptT)
 
-		fcT = tk.LoadStringFromFile(scriptPathG)
+		fcT = tk.LoadStringFromFile(ScriptPathG)
 	} else if ifAppPathT {
 		if (!tk.EndsWith(scriptT, ".gox")) && (!tk.EndsWith(scriptT, ".xie")) {
 			scriptT += ".gox"
 		}
 
-		scriptPathG = filepath.Join(tk.GetApplicationPath(), scriptT)
+		ScriptPathG = filepath.Join(tk.GetApplicationPath(), scriptT)
 
-		fcT = tk.LoadStringFromFile(scriptPathG)
+		fcT = tk.LoadStringFromFile(ScriptPathG)
 	} else if ifLocalT {
 		if (!tk.EndsWith(scriptT, ".gox")) && (!tk.EndsWith(scriptT, ".xie")) {
 			scriptT += ".gox"
 		}
 
-		localPathT := getCfgString("localScriptPath.cfg")
+		localPathT := GetCfgString("localScriptPath.cfg")
 
 		if tk.IsErrorString(localPathT) {
 			// tk.Pl("failed to get local path: %v", tk.GetErrorString(localPathT))
@@ -3125,11 +3366,11 @@ func runArgs(argsA ...string) interface{} {
 		// 	tk.Pl("Try to load script from %v", filepath.Join(localPathT, scriptT))
 		// }
 
-		scriptPathG = filepath.Join(localPathT, scriptT)
+		ScriptPathG = filepath.Join(localPathT, scriptT)
 
-		fcT = tk.LoadStringFromFile(scriptPathG)
+		fcT = tk.LoadStringFromFile(ScriptPathG)
 	} else {
-		scriptPathG = scriptT
+		ScriptPathG = scriptT
 		fcT = tk.LoadStringFromFile(scriptT)
 	}
 
@@ -3220,24 +3461,24 @@ func runArgs(argsA ...string) interface{} {
 	}
 
 	if ifOpenT {
-		tk.RunWinFileWithSystemDefault(scriptPathG)
+		tk.RunWinFileWithSystemDefault(ScriptPathG)
 
 		return nil
 	}
 
 	// if ifCompileT {
-	// 	initQLVM()
+	// 	InitQLVM()
 
-	// 	qlVMG.SetVar("argsG", argsT)
+	// 	QlVMG.SetVar("argsG", argsT)
 
-	// 	retG = notFoundG
+	// 	RetG = NotFoundG
 
-	// 	endT, errT := qlVMG.SafeCl([]byte(fcT), "")
+	// 	endT, errT := QlVMG.SafeCl([]byte(fcT), "")
 	// 	if errT != nil {
 
 	// 		// tk.Pl()
 
-	// 		// f, l := qlVMG.Code.Line(qlVMG.Code.Reserve().Next())
+	// 		// f, l := QlVMG.Code.Line(QlVMG.Code.Reserve().Next())
 	// 		// tk.Pl("Next line: %v, %v", f, l)
 
 	// 		return tk.Errf("failed to compile script(%v) error: %v\n", scriptT, errT)
@@ -3245,13 +3486,13 @@ func runArgs(argsA ...string) interface{} {
 
 	// 	tk.Pl("endT: %v", endT)
 
-	// 	errT = qlVMG.DumpEngine()
+	// 	errT = QlVMG.DumpEngine()
 
 	// 	if errT != nil {
 	// 		return tk.Errf("failed to dump engine: %v\n", errT)
 	// 	}
 
-	// 	tk.Plvsr(qlVMG.Cpl.GetCode().Len(), qlVMG.Run())
+	// 	tk.Plvsr(QlVMG.Cpl.GetCode().Len(), QlVMG.Run())
 
 	// 	return nil
 	// }
@@ -3294,7 +3535,7 @@ func runArgs(argsA ...string) interface{} {
 	}
 
 	if ifXieT {
-		rs := xie.RunCode(fcT, nil, map[string]interface{}{"scriptPathG": scriptPathG}, argsT...) // "guiG": guiHandlerG,
+		rs := xie.RunCode(fcT, nil, map[string]interface{}{"scriptPathG": ScriptPathG}, argsT...) // "guiG": guiHandlerG,
 		if !tk.IsUndefined(rs) {
 			tk.Pl("%v", rs)
 		}
@@ -3302,24 +3543,24 @@ func runArgs(argsA ...string) interface{} {
 		return nil
 	}
 
-	initQLVM()
+	InitQLVM()
 
-	qlVMG.SetVar("argsG", argsT)
+	QlVMG.SetVar("argsG", argsT)
 
-	retG = notFoundG
+	RetG = NotFoundG
 
-	errT = qlVMG.SafeEval(fcT)
+	errT = QlVMG.SafeEval(fcT)
 	if errT != nil {
 
 		// tk.Pl()
 
-		// f, l := qlVMG.Code.Line(qlVMG.Code.Reserve().Next())
+		// f, l := QlVMG.Code.Line(QlVMG.Code.Reserve().Next())
 		// tk.Pl("Next line: %v, %v", f, l)
 
 		return tk.Errf("failed to execute script(%v) error: %v\n", scriptT, errT)
 	}
 
-	rs, ok := qlVMG.GetVar("outG")
+	rs, ok := QlVMG.GetVar("outG")
 
 	if ok {
 		if rs != nil {
@@ -3327,31 +3568,10 @@ func runArgs(argsA ...string) interface{} {
 		}
 	}
 
-	return retG
+	return RetG
 }
 
-// init the main VM
-
-var retG interface{}
-var notFoundG = interface{}(errors.New("not found"))
-
-func initQLVM() {
-	if qlVMG == nil {
-		qlang.SetOnPop(func(v interface{}) {
-			retG = v
-		})
-
-		// qlang.SetDumpCode("1")
-
-		importQLNonGUIPackages()
-
-		
-
-		qlVMG = qlang.New()
-	}
-}
-
-func downloadStringFromSSH(sshA string, filePathA string) string {
+func DownloadStringFromSSH(sshA string, filePathA string) string {
 	aryT := tk.Split(sshA, ":")
 
 	basePathT, errT := tk.EnsureBasePath("gox")
@@ -3402,7 +3622,7 @@ func downloadStringFromSSH(sshA string, filePathA string) string {
 	return fcT
 }
 
-func getCfgString(fileNameA string) string {
+func GetCfgString(fileNameA string) string {
 	basePathT, errT := tk.EnsureBasePath("gox")
 
 	if errT == nil {
@@ -3421,7 +3641,7 @@ func getCfgString(fileNameA string) string {
 	return tk.ErrStrF("failed to get config string: %v", errT)
 }
 
-func setCfgString(fileNameA string, strA string) string {
+func SetCfgString(fileNameA string, strA string) string {
 	basePathT, errT := tk.EnsureBasePath("gox")
 
 	if errT == nil {
@@ -3440,7 +3660,7 @@ func setCfgString(fileNameA string, strA string) string {
 	return tk.ErrStrF("failed to save config string: %v", errT)
 }
 
-var editFileScriptG = `
+var EditFileScriptG = `
 sciter = github_scitersdk_gosciter
 window = github_scitersdk_gosciter_window
 
@@ -4173,7 +4393,7 @@ if ifSwitchExists(argsG, "-local") {
 		fileNameT += ".gox"
 	}
 
-	fileNameT := getCfgString("localScriptPath.cfg")
+	fileNameT := GetCfgString("localScriptPath.cfg")
 }
 
 w.Call("editFile", sciter.NewValue(fileNameT))
@@ -4203,13 +4423,131 @@ w.Run()
 
 `
 
-func editFile(fileNameA string, argsA ...string) {
-	rs := runScriptX(editFileScriptG, argsA...)
+func EditFile(fileNameA string, argsA ...string) {
+	rs := RunScriptX(EditFileScriptG, argsA...)
 
-	if rs != notFoundG {
+	if rs != NotFoundG {
 		// tk.Pl("%v", rs)
 	}
 
+}
+
+func doJapi(resA http.ResponseWriter, reqA *http.Request) string {
+	if reqA != nil {
+		reqA.ParseForm()
+	}
+
+	reqT := tk.GetFormValueWithDefaultValue(reqA, "req", "")
+
+	if resA != nil {
+		resA.Header().Set("Access-Control-Allow-Origin", "*")
+		resA.Header().Set("Access-Control-Allow-Headers", "*")
+		resA.Header().Set("Content-Type", "text/json;charset=utf-8")
+	}
+
+	resA.WriteHeader(http.StatusOK)
+
+	vo := tk.GetFormValueWithDefaultValue(reqA, "vo", "")
+
+	var paraMapT map[string]string
+	var errT error
+
+	if vo == "" {
+		paraMapT = tk.FormToMap(reqA.Form)
+	} else {
+		paraMapT, errT = tk.MSSFromJSON(vo)
+
+		if errT != nil {
+			return tk.GenerateJSONPResponse("success", "invalid vo format", reqA)
+		}
+	}
+
+	switch reqT {
+	case "debug":
+		return tk.GenerateJSONPResponse("success", fmt.Sprintf("%v", reqA), reqA)
+
+	case "requestinfo":
+		rs := tk.Spr("%#v", reqA)
+
+		return tk.GenerateJSONPResponse("success", rs, reqA)
+
+	case "test":
+
+		return tk.GenerateJSONPResponse("success", "test respone", reqA)
+
+	case "runScript":
+		scriptT := paraMapT["script"]
+		if scriptT == "" {
+			return tk.GenerateJSONPResponse("fail", fmt.Sprintf("empty script"), reqA)
+		}
+
+		retT, errT := RunScript(scriptT, paraMapT["input"], nil, nil)
+
+		var errStrT string = ""
+
+		if errT != nil {
+			errStrT = fmt.Sprintf("%v", errT)
+		}
+
+		return tk.GenerateJSONPResponseWithMore("success", retT, reqA, "Error", errStrT)
+
+	case "runFileScript":
+		scriptT := paraMapT["script"]
+		if scriptT == "" {
+			return tk.GenerateJSONPResponse("fail", tk.Spr("empty script"), reqA)
+		}
+
+		baseDirT := paraMapT["base"]
+		if baseDirT == "" {
+			baseDirT = "."
+		}
+
+		fcT := tk.LoadStringFromFile(filepath.Join(baseDirT, scriptT))
+		if tk.IsErrStr(fcT) {
+			return tk.GenerateJSONPResponseWithMore("fail", "", reqA, "Error", tk.GetErrStr(fcT))
+		}
+
+		retT, errT := RunScript(fcT, paraMapT["input"], nil, nil)
+
+		var errStrT string = ""
+
+		if errT != nil {
+			errStrT = fmt.Sprintf("%v", errT)
+		}
+
+		return tk.GenerateJSONPResponseWithMore("success", retT, reqA, "Error", errStrT)
+	}
+
+	return tk.GenerateJSONPResponse("fail", "unknown request", reqA)
+
+}
+
+func japiHandler(w http.ResponseWriter, req *http.Request) {
+	rs := doJapi(w, req)
+
+	w.Write([]byte(rs))
+}
+
+func StartServer(portA string, codeA string) error {
+	muxT := http.NewServeMux()
+
+	if strings.ContainsAny(codeA, " /") {
+		return tk.Errf("failed to start server: %v", "invalid password")
+	}
+
+	if codeA == "" {
+		muxT.HandleFunc("/japi", japiHandler)
+	} else {
+		muxT.HandleFunc("/japi/"+codeA, japiHandler)
+	}
+
+	errT := http.ListenAndServe(portA, muxT)
+
+	if errT != nil {
+		return tk.Errf("failed to start server: %v", errT)
+	}
+
+	return nil
 }
 
 func main() {
@@ -4232,7 +4570,7 @@ func main() {
 		valueT, ok := rs.(error)
 
 		if ok {
-			if valueT != spec.Undefined && valueT != notFoundG {
+			if valueT != spec.Undefined && valueT != NotFoundG {
 				tk.Pl("Error: %T %v", valueT, valueT)
 			}
 		} else {
@@ -4244,6 +4582,6 @@ func main() {
 
 func test() {
 	if tk.IfSwitchExists(os.Args, "-dotest") {
-		tk.Pl("%v", codeG)
+		tk.Pl("%v", CodeG)
 	}
 }

@@ -1,0 +1,41 @@
+myAdd = fn(a, b) {
+	return a + b + b
+}
+
+c = myAdd(3, 5)
+
+println(c)
+
+upperPrintln = fn(s ...) {
+	for _, v = range(s) {
+		if typeOf(v) == "string" {
+			print(tk.ToUpper(v))
+		} else {
+			printf("%v", v)
+		}
+	}
+
+	println()
+}
+
+upperPrintln("a", "bcd", 123)
+
+sum = fn(n...) {
+	t = 0
+	for _, a = range(n) {
+		t += a
+	}
+	return t
+}
+
+println(sum(1, 2, 3, 1.8))
+
+println2 = fn(s...) {
+	println(s...)
+	println(s)
+	println()
+}
+
+println2(1, "abc", 2.6, true)
+
+println2(myAdd(2.9 ,7.1))

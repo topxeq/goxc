@@ -1,0 +1,229 @@
+// Assign value to variables
+
+a = 3
+
+printfln("[%T] %v", a, a)
+
+b = 1.2
+
+printfln("[%T] %v", b, b)
+
+a = "abc"
+
+printfln("[%T] %v", a, a)
+
+println("------")
+
+a = 1
+
+f1 = fn() {
+	a; a = 6
+}
+f1()
+
+println("a:", a)
+
+println("------")
+
+a = 1
+fn(c) {
+	a = c
+
+	b = a
+
+	a = b + 9
+}(a)
+println(a)
+
+println("------")
+
+// Boolean
+
+b = true
+
+printf("[%T] %v\n", b, b)
+
+c = false
+
+printf("[%T] %v\n", c, c)
+
+printf("!b = %v\n", !b)
+
+printf("b == c: %v\n", b == c)
+
+printf("1 > 14: %v\n", 1 > 14)
+
+printf("b == true: %v\n", b == true)
+
+printf("b && c: %v\n", b && c)
+
+printf("b || c: %v\n", b || c)
+
+println("------")
+
+// Integer
+
+c1 = 19
+
+c2 = 18
+
+println(c1 + c2/3)
+
+printfln("%T, %v", c1, c1)
+
+printfln("%T", c1+c2)
+printfln("%T", c2/3)
+printfln("%T", c1+c2/3)
+printfln("%T, %v", (c1+c2/3)*6, (c1+c2/3)*6)
+
+c1++
+c1 *= 3
+
+c2 += 5
+c2--
+
+printfln("c1: %v, c2: %v, %T", c1, c2, c1)
+
+println("------")
+ 
+// Float
+
+f1 = 1.32
+
+previus_f1 = f1
+
+f1 = f1 * 0.8
+
+print(previus_f1, "*", 0.8, "=", f1)
+println()
+
+f2 = 0.99
+f2 /= 0.3
+
+print(0.99, "/", 0.3, "=", f2, "\n")
+
+println("------")
+
+// String and Byte
+
+s1 = "abc"
+
+s2 = s1 + "3"
+
+pv("s2")
+
+println(s1, "+", "3", "=", s2)
+
+s5 = "上善若水"
+
+pv("s5")
+
+s6 = []byte(s5)
+
+println(s6)
+
+t = rune(5)
+pv("t")
+
+s7 = []rune("上善若水")
+
+pv("s7")
+
+pl("s5[1:2] = %#v", s5[1:2])
+
+pl("s6[1:2] = %#v", s6[1:2])
+
+pl("s7[1:2] = %#v", s7[1:2])
+
+pl("string(s7[1:3]) = %#v", string(s7[1:3]))
+
+pl("string([]byte(string(s7[1:3]))) = %#v", string([]byte(string(s7[1:3]))))
+
+pl("%c", s5[1])
+pl("%c", s6[1])
+pl("%c", s7[1])
+
+pl("%T, %#v", s5[1], s5[1])
+pl("%T, %#v", s6[1], s6[1])
+pl("%T, %#v", s7[1], s7[1])
+
+for i = 0; i < len(s5); i++ {
+	pl("%v: %v", i, s5[i])
+}
+
+for v = range s7 {
+	pl("%#T, %v", byte(v), byte(v))
+}
+
+println("------")
+
+// nil type
+
+pv("aaa")
+
+println(aaa)
+
+aaa = 18
+
+pv("aaa")
+
+println("aaa")
+
+b = nil
+
+pv("b")
+
+println(b)
+
+println("------")
+
+c, errT = tk.StrToInt("12ab")
+
+if errT != nil {
+	println("Error:", errT.Error())
+}
+
+pv("c")
+
+pv("errT")
+
+c, errT = tk.StrToInt("123")
+
+pv("c")
+
+pv("errT")
+
+if errT != nil {
+	println("Error:", errT.Error())
+}
+
+println("------")
+
+// Conversion
+
+a = 1
+b = int64(2)
+
+println("type of a is:", type(a))
+println("type of b is:", type(b))
+
+println("a + b =", a+b)
+printfln("a + b = %#v", a+b)
+
+a1 = tk.IntToStr(a)
+b1 = tk.IntToStr(b)
+
+printfln("type of a1 is: %T", a1)
+printfln("value of a1 is: %v", a1)
+printfln("internal value of a1 is: %#v", a1)
+
+println("a1 + b1 =", a1+b1)
+printfln("a1 + b1 = %#v", a1+b1)
+
+a2 = tk.StrToFloat64WithDefaultValue(a1, 0)
+b2 = tk.StrToFloat64WithDefaultValue(b1, 0)
+
+printfln("a2 + b2 = %#v", a2+b2)
+printfln("type of a2 + b2 is: %T", a2+b2)
+
+getInputf("Press enter to exit...")

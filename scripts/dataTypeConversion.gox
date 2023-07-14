@@ -1,0 +1,24 @@
+a = 1
+b = int64(2)
+
+println("type of a is:", type(a))
+println("type of b is:", type(b))
+
+println("a + b =", a+b)
+printfln("a + b = %#v", a+b)
+
+a1 = tk.IntToStr(a)
+b1 = tk.IntToStr(b)
+
+printfln("type of a1 is: %T", a1)
+printfln("value of a1 is: %v", a1)
+printfln("internal value of a1 is: %#v", a1)
+
+println("a1 + b1 =", a1+b1)
+printfln("a1 + b1 = %#v", a1+b1)
+
+a2 = tk.StrToFloat64WithDefaultValue(a1, 0)
+b2 = tk.StrToFloat64WithDefaultValue(b1, 0)
+
+printfln("a2 + b2 = %#v", a2+b2)
+printfln("type of a2 + b2 is: %T", a2+b2)

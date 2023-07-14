@@ -1,0 +1,21 @@
+H = toFloat(getParam(argsG, 1))
+W = toFloat(getParam(argsG, 2))
+
+pl("身高: %.2f", H)
+pl("体重: %.2f", W)
+
+BMI = W / (H * H)
+
+pl("BMI: %.2f", BMI)
+
+if BMI < 18.5 {
+	pl("偏瘦")
+} elif (18.5 <= BMI) && (BMI < 24) {
+	pl("正常")
+} elif 24 <= BMI && BMI < 28 {
+	pl("偏胖")
+} elif 28 <= BMI && BMI < 30 {
+	pl("肥胖")
+} elif BMI >= 30 {
+	pl("重度肥胖")
+}

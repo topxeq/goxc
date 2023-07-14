@@ -1,0 +1,29 @@
+c = make(chan int)
+
+go fn() {
+	for {
+		c <- 1
+		tk.SleepSeconds(1)
+	}
+}()
+
+go fn() {
+	for {
+		c <- 200
+		tk.SleepSeconds(1)
+	}
+}()
+
+go fn() {
+	for {
+		tmp = <-c
+		println(tmp)
+		tk.SleepMilliSeconds(500)
+	}
+}()
+
+for {
+	tk.SleepSeconds(5)
+
+	println("main thread")
+}

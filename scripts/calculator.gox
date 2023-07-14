@@ -1,0 +1,5 @@
+expression = getInput("Please enter the expression: ")
+
+result = eval(expression)
+
+println("result:", result)
