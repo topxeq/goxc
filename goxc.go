@@ -3007,7 +3007,6 @@ func runInteractiveQlang() int {
 
 // Non GUI related end
 
-
 func runLine(strA string) interface{} {
 	argsT, errT := tk.ParseCommandLine(strA)
 
@@ -3372,6 +3371,10 @@ func runArgs(argsA ...string) interface{} {
 	} else {
 		ScriptPathG = scriptT
 		fcT = tk.LoadStringFromFile(scriptT)
+	}
+
+	if strings.HasSuffix(scriptT, ".xie") {
+		ifXieT = true
 	}
 
 	if tk.IsErrorString(fcT) {
